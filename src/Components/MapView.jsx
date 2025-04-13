@@ -97,7 +97,7 @@ function MapView() {
                   <div className="d-grid gap-2">
                     <button
                       className="btn btn-primary"
-                      onClick={() => window.location.href = '/trip-form'}
+                      onClick={() => window.location.href = '/Payment'}
                     >
                       Book This Ride
                     </button>

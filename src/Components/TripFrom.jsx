@@ -1,12 +1,42 @@
-import React from "react";
+import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+
 function TripForm() {
+  const [model, setModel] = useState('');
+  const [color, setColor] = useState('');
+  const [license, setLicense] = useState('');
+  const [departure, setDeparture] = useState('');
+  const [destination, setDestination] = useState('');
+  const [estimatedTime, setEstimatedTime] = useState('');
+  const [distance, setDistance] = useState('');
+  const [cost, setCost] = useState('');
+
+  const handleCreateTrip = (e) => {
+    e.preventDefault();
+    const newTrip = {
+      car: model,
+      rating: '★★★☆☆',
+      from: departure,
+      to: destination,
+      time: estimatedTime,
+      cost: cost,
+      color: color,
+      license: license,
+      distance: distance,
+      driver: 'You',
+    };
+    const existingTrips = JSON.parse(localStorage.getItem('driverTrips')) || [];
+    existingTrips.push(newTrip);
+    localStorage.setItem('driverTrips', JSON.stringify(existingTrips));
+    window.location.href = '/home';
+  };
+
   return (
     <div className="bg-light">
       <div className="container-fluid p-0">
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
           <div className="container">
-            <a className="navbar-brand" href="#">KADAD+</a>
+            <a className="navbar-brand" href="/home">KADAD+</a>
             <button
               className="navbar-toggler"
               type="button"
@@ -18,13 +48,13 @@ function TripForm() {
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav ms-auto">
                 <li className="nav-item">
-                  <a className="nav-link" href="home.html">Home</a>
+                  <a className="nav-link" href="/home">Home</a>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link" href="profile.html">Profile</a>
+                  <a className="nav-link" href="/profile">Profile</a>
                 </li>
                 <li className="nav-item">
-                  <a className="nav-link" href="index.html">Logout</a>
+                  <a className="nav-link" href="/">Logout</a>
                 </li>
               </ul>
             </div>
@@ -36,130 +66,113 @@ function TripForm() {
             <div className="col-md-8">
               <div className="card shadow-sm">
                 <div className="card-header bg-white">
-                  <h4 className="mb-0">List your trip</h4>
+                  <h4 className="mb-0">Create a Trip (Driver)</h4>
                 </div>
                 <div className="card-body">
-                  <form>
-                    <div className="mb-4">
-                      <h5 className="mb-3">Trip Details</h5>
-                      <div className="row g-3">
-                        <div className="col-md-6">
-                          <label htmlFor="pickupLocation" className="form-label">Pickup Location</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="pickupLocation"
-                            placeholder="Enter pickup location"
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label htmlFor="destination" className="form-label">Destination</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="destination"
-                            placeholder="Enter destination"
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label htmlFor="date" className="form-label">Date</label>
-                          <input type="date" className="form-control" id="date" />
-                        </div>
-                        <div className="col-md-6">
-                          <label htmlFor="time" className="form-label">Time</label>
-                          <input type="time" className="form-control" id="time" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <h5 className="mb-3">Passenger Details</h5>
-                      <div className="row g-3">
-                        <div className="col-md-6">
-                          <label htmlFor="passengers" className="form-label">Number of Passengers</label>
-                          <select className="form-select" id="passengers">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                          </select>
-                        </div>
-                        <div className="col-md-6">
-                          <label htmlFor="luggage" className="form-label">Luggage</label>
-                          <select className="form-select" id="luggage">
-                            <option value="none">None</option>
-                            <option value="small">Small</option>
-                            <option value="medium">Medium</option>
-                            <option value="large">Large</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <h5 className="mb-3">Special Requests</h5>
-                      <div className="form-check mb-2">
-                        <input className="form-check-input" type="checkbox" id="airConditioned" />
-                        <label className="form-check-label" htmlFor="airConditioned">Air Conditioned</label>
-                      </div>
-                      <div className="form-check mb-2">
-                        <input className="form-check-input" type="checkbox" id="childSeat" />
-                        <label className="form-check-label" htmlFor="childSeat">Child Seat</label>
-                      </div>
-                      <div className="form-check mb-2">
-                        <input className="form-check-input" type="checkbox" id="petFriendly" />
-                        <label className="form-check-label" htmlFor="petFriendly">Pet Friendly</label>
-                      </div>
-                      <div className="mb-3">
-                        <label htmlFor="notes" className="form-label">Additional Notes</label>
-                        <textarea
+                  <form onSubmit={handleCreateTrip}>
+                    <div className="row mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label">Model (e.g., Camry 2022)</label>
+                        <input
+                          type="text"
                           className="form-control"
-                          id="notes"
-                          rows="3"
-                          placeholder="Any special instructions for the driver"
-                        ></textarea>
+                          required
+                          value={model}
+                          onChange={(e) => setModel(e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Color (e.g., White)</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          required
+                          value={color}
+                          onChange={(e) => setColor(e.target.value)}
+                        />
                       </div>
                     </div>
-
-                    <div className="mb-4">
-                      <h5 className="mb-3">Summary</h5>
-                      <div className="card bg-light">
-                        <div className="card-body">
-                          <div className="d-flex justify-content-between mb-2">
-                            <span>Base Fare</span>
-                            <span>$15.00</span>
-                          </div>
-                          <div className="d-flex justify-content-between mb-2">
-                            <span>Service Fee</span>
-                            <span>$2.00</span>
-                          </div>
-                          <div className="d-flex justify-content-between mb-2">
-                            <span>Tax</span>
-                            <span>$1.00</span>
-                          </div>
-                          <hr />
-                          <div className="d-flex justify-content-between fw-bold">
-                            <span>Total</span>
-                            <span>$18.00</span>
-                          </div>
-                        </div>
+                    <div className="row mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label">License (e.g., KSA-1234)</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          required
+                          value={license}
+                          onChange={(e) => setLicense(e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Estimated Time (e.g., 25 min)</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          required
+                          value={estimatedTime}
+                          onChange={(e) => setEstimatedTime(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="row mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label">Distance (e.g., 12 km)</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          required
+                          value={distance}
+                          onChange={(e) => setDistance(e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Cost (e.g., $15.00)</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          required
+                          value={cost}
+                          onChange={(e) => setCost(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <hr />
+                    <h5 className="mb-3">Trip Route</h5>
+                    <div className="row mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label">Departure Location</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Downtown"
+                          required
+                          value={departure}
+                          onChange={(e) => setDeparture(e.target.value)}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <label className="form-label">Destination Location</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Airport"
+                          required
+                          value={destination}
+                          onChange={(e) => setDestination(e.target.value)}
+                        />
                       </div>
                     </div>
 
                     <div className="d-grid gap-2">
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => (window.location.href = "payment.html")}
-                      >
-                        Proceed to Payment
+                      <button type="submit" className="btn btn-primary">
+                        Create Trip
                       </button>
                       <button
                         type="button"
                         className="btn btn-outline-secondary"
-                        onClick={() => (window.location.href = "map.html")}
+                        onClick={() => (window.location.href = '/home')}
                       >
-                        Back
+                        Cancel
                       </button>
                     </div>
                   </form>

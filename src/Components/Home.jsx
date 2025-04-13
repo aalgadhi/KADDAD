@@ -1,50 +1,69 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 function Home() {
-  const rideData = [
+  const defaultRides = [
     {
-      car: 'Toyota Camry',
-      rating: '★★★★☆',
-      point: 'Downtown',
-      time: '25 mins',
-      driver: 'Ahmed',
-      cost: '$15.00',
-    },
-    {
-      car: 'Honda Accord',
+      car: 'Camry 2025',
       rating: '★★★★★',
-      point: 'Airport',
-      time: '30 mins',
-      driver: 'Fatima',
-      cost: '$18.50',
+      from: 'KFUPM',
+      to: 'Al-Hasa',
+      time: '50 mins',
+      cost: '$99',
+      driver: 'Reda',
     },
     {
       car: 'Nissan Altima',
       rating: '★★★★☆',
-      point: 'Mall',
-      time: '15 mins',
+      from: 'Riyadh',
+      to: 'KFUPM',
+      time: '3 Hours',
+      cost: '$30',
       driver: 'Mohammed',
-      cost: '$12.75',
     },
     {
       car: 'Hyundai Sonata',
       rating: '★★★☆☆',
-      point: 'University',
-      time: '20 mins',
-      driver: 'Sara',
-      cost: '$14.25',
+      from: 'KSU',
+      to: 'Jazan',
+      time: '6 Hours',
+      cost: '$33',
+      driver: 'Ali',
     },
     {
       car: 'Kia Optima',
       rating: '★★★★☆',
-      point: 'Hospital',
-      time: '22 mins',
-      driver: 'Khalid',
+      from: 'KFU',
+      to: 'Hail',
+      time: '6 Hours',
       cost: '$16.00',
+      driver: 'Khalid',
     },
   ];
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [allRides, setAllRides] = useState(defaultRides);
+  const [filteredRides, setFilteredRides] = useState(defaultRides);
+
+  useEffect(() => {
+    const localDriverTrips = JSON.parse(localStorage.getItem('driverTrips')) || [];
+    const combined = [...defaultRides, ...localDriverTrips];
+    setAllRides(combined);
+    setFilteredRides(combined);
+  }, []);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredRides(allRides);
+      return;
+    }
+    const term = searchTerm.toLowerCase();
+    const results = allRides.filter((ride) =>
+      ride.from.toLowerCase().includes(term) || ride.to.toLowerCase().includes(term) || ride.car.toLowerCase().includes(term)
+    );
+    setFilteredRides(results);
+  }, [searchTerm, allRides]);
 
   return (
     <div className="bg-light">
@@ -52,7 +71,12 @@ function Home() {
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
           <div className="container">
             <a className="navbar-brand" href="/">KADAD+</a>
-            <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button
+              className="navbar-toggler"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#navbarNav"
+            >
               <span className="navbar-toggler-icon"></span>
             </button>
             <div className="collapse navbar-collapse" id="navbarNav">
@@ -76,9 +100,19 @@ function Home() {
             <div className="row">
               <div className="col-12">
                 <div className="input-group">
-                  <input type="text" className="form-control" placeholder="Search your destination" />
-                  <button className="btn btn-primary" type="button">
-                    <i className="fas fa-search"></i>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search rides by departure, destination, or car"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <button
+                    className="btn btn-success ms-2"
+                    type="button"
+                    onClick={() => (window.location.href = '/trip-form')}
+                  >
+                    Create a Trip
                   </button>
                 </div>
               </div>
@@ -88,9 +122,8 @@ function Home() {
 
         <div className="container py-4">
           <h2 className="mb-4">Available Rides</h2>
-
           <div className="row g-4">
-            {rideData.map((ride, index) => (
+            {filteredRides.map((ride, index) => (
               <div key={index} className="col-md-6 col-lg-4">
                 <div className="card h-100 shadow-sm">
                   <div className="card-body">
@@ -98,23 +131,30 @@ function Home() {
                       <h5 className="card-title mb-0">{ride.car}</h5>
                       <span className="badge bg-success">{ride.rating}</span>
                     </div>
-                    <p className="card-text text-muted small">
-                      <i className="fas fa-map-marker-alt me-1"></i> Starting Point: {ride.point}
+                    <p className="card-text text-muted small mb-1">
+                      <i className="fas fa-map-marker-alt me-1"></i> From: {ride.from}
                     </p>
-                    <p className="card-text text-muted small">
-                      <i className="fas fa-clock me-1"></i> Estimated Time: {ride.time}
+                    <p className="card-text text-muted small mb-1">
+                      <i className="fas fa-map-marker-alt me-1"></i> To: {ride.to}
                     </p>
-                    <p className="card-text text-muted small">
-                      <i className="fas fa-user me-1"></i> Driver: {ride.driver}
+                    <p className="card-text text-muted small mb-1">
+                      <i className="fas fa-clock me-1"></i> Time: {ride.time}
                     </p>
-                    <div className="d-flex justify-content-between align-items-center mt-3">
-                      <span className="fw-bold">{ride.cost}</span>
-                      <a href="/map" className="btn btn-outline-primary btn-sm">View Details</a>
+                    <p className="card-text text-muted small mb-1 fw-bold">
+                      Cost: {ride.cost}
+                    </p>
+                    <div className="d-flex justify-content-end mt-3">
+                      <a href="/map" className="btn btn-outline-primary btn-sm">Show Details</a>
                     </div>
                   </div>
                 </div>
               </div>
             ))}
+            {filteredRides.length === 0 && (
+              <div className="text-center mt-4">
+                <p>No matching rides found.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
