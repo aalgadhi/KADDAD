@@ -1,0 +1,11 @@
+// If you want to run this program 
+// First run: cd caddad
+// Second run: npm start
+// You will see a link in the terminal, just write it in the browser
+//npm install leaflet تاكد تحمل هذي
+// تاكد تحمل نود جي اس
+// تاكد تحمل بوت ستراب
+// احيانا npm run dev        instead of       npm start
+// حمل npm install @fortawesome/fontawesome-free
+// حمل npm install react-router-dom
+//حمل اذا ماضبط الهكمبوننتس npm install --save-dev babel-loader webpack-dev-server
