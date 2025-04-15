@@ -1,55 +1,81 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import NavBar from './NavBar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+const getInitialLang = () => {
+  try {
+    const storedLang = localStorage.getItem('lang');
+    if (storedLang) {
+      return storedLang;
+    }
+  } catch (e) {
+    console.error("Could not access localStorage:", e);
+  }
+  return navigator.language.startsWith('ar') ? 'ar' : 'en';
+};
 
 function Payment() {
+  const [lang, setLang] = useState(getInitialLang);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    try {
+      const storedLang = localStorage.getItem('lang');
+      if (storedLang !== lang) {
+        localStorage.setItem('lang', lang);
+      }
+    } catch (e) {
+      console.error("Could not update localStorage:", e);
+    }
+  }, [lang]);
+
+  const isArabic = lang === 'ar';
+
   return (
     <>
-      <div className="bg-light">
+      <div className="bg-light" dir={isArabic ? 'rtl' : 'ltr'}>
         <div className="container-fluid p-0">
-          
-          <NavBar/>
-          
+          <NavBar lang={lang} setLang={setLang} />
           <div className="container py-4">
             <div className="row justify-content-center">
               <div className="col-md-8">
                 <div className="card shadow-sm">
                   <div className="card-header bg-white">
-                    <h4 className="mb-0">Ride Payment</h4>
+                    <h4 className="mb-0">{isArabic ? 'دفع قيمة الرحلة' : 'Ride Payment'}</h4>
                   </div>
                   <div className="card-body">
                     <div className="mb-4">
-                      <h5 className="mb-3">Trip Summary</h5>
+                      <h5 className="mb-3">{isArabic ? 'ملخص الرحلة' : 'Trip Summary'}</h5>
                       <div className="card bg-light mb-3">
                         <div className="card-body">
                           <div className="row">
                             <div className="col-md-8">
                               <p className="mb-1">
-                                <strong>Driver:</strong> Ahmed
+                                <strong>{isArabic ? 'السائق' : 'Driver'}:</strong> Ahmed
                               </p>
                               <p className="mb-1">
                                 <i className="fas fa-map-marker-alt me-2"></i>
-                                From: Downtown
+                                {isArabic ? 'من' : 'From'}: {isArabic ? 'وسط المدينة' : 'Downtown'}
                               </p>
                               <p className="mb-1">
                                 <i className="fas fa-map-marker-alt me-2"></i>
-                                To: Airport
+                                {isArabic ? 'إلى' : 'To'}: {isArabic ? 'المطار' : 'Airport'}
                               </p>
                               <p className="mb-1">
                                 <i className="fas fa-calendar me-2"></i>
-                                Date: April 12, 2025
+                                {isArabic ? 'التاريخ' : 'Date'}: April 12, 2025
                               </p>
                               <p className="mb-0">
                                 <i className="fas fa-clock me-2"></i>
-                                Time: 10:30 AM
+                                {isArabic ? 'الوقت' : 'Time'}: 10:30 AM
                               </p>
                             </div>
                             <div className="col-md-4 text-md-end">
-                              <p className="mb-1">Base Fare: $15.00</p>
-                              <p className="mb-1">Service Fee: $2.00</p>
-                              <p className="mb-1">Tax: $1.00</p>
-                              <p className="fw-bold mb-0">Total: $18.00</p>
+                              <p className="mb-1">{isArabic ? 'الأجرة الأساسية' : 'Base Fare'}: $15.00</p>
+                              <p className="mb-1">{isArabic ? 'رسوم الخدمة' : 'Service Fee'}: $2.00</p>
+                              <p className="mb-1">{isArabic ? 'الضريبة' : 'Tax'}: $1.00</p>
+                              <p className="fw-bold mb-0">{isArabic ? 'المجموع' : 'Total'}: $18.00</p>
                             </div>
                           </div>
                         </div>
@@ -57,7 +83,7 @@ function Payment() {
                     </div>
 
                     <div className="mb-4">
-                      <h5 className="mb-3">Payment Method</h5>
+                      <h5 className="mb-3">{isArabic ? 'طريقة الدفع' : 'Payment Method'}</h5>
                       <div className="row g-3">
                         <div className="col-md-6">
                           <div className="card border-primary">
@@ -75,7 +101,7 @@ function Payment() {
                                     <span className="text-primary">VISA</span>
                                     <span className="text-muted">**** 5432</span>
                                   </div>
-                                  <small className="text-muted">Expires: 05/26</small>
+                                  <small className="text-muted">{isArabic ? 'تنتهي صلاحيتها' : 'Expires'}: 05/26</small>
                                 </label>
                               </div>
                             </div>
@@ -96,7 +122,7 @@ function Payment() {
                                     <span className="text-primary">MASTERCARD</span>
                                     <span className="text-muted">**** 7890</span>
                                   </div>
-                                  <small className="text-muted">Expires: 08/27</small>
+                                  <small className="text-muted">{isArabic ? 'تنتهي صلاحيتها' : 'Expires'}: 08/27</small>
                                 </label>
                               </div>
                             </div>
@@ -110,17 +136,17 @@ function Payment() {
                           data-bs-toggle="modal"
                           data-bs-target="#addCardModal"
                         >
-                          <i className="fas fa-plus me-1"></i> Add New Card
+                          <i className="fas fa-plus me-1"></i> {isArabic ? 'إضافة بطاقة جديدة' : 'Add New Card'}
                         </button>
                       </div>
                     </div>
 
                     <div className="mb-4">
-                      <h5 className="mb-3">Amount</h5>
+                      <h5 className="mb-3">{isArabic ? 'المبلغ' : 'Amount'}</h5>
                       <div className="card bg-light">
                         <div className="card-body">
                           <div className="d-flex justify-content-between align-items-center">
-                            <span className="fs-5">Total</span>
+                            <span className="fs-5">{isArabic ? 'المجموع' : 'Total'}</span>
                             <span className="fs-5 fw-bold">$18.00</span>
                           </div>
                         </div>
@@ -133,14 +159,14 @@ function Payment() {
                         className="btn btn-primary"
                         onClick={() => (window.location.href = '/confirmation')}
                       >
-                        Pay Now
+                        {isArabic ? 'ادفع الآن' : 'Pay Now'}
                       </button>
                       <button
                         type="button"
                         className="btn btn-outline-secondary"
                         onClick={() => (window.location.href = '/home')}
                       >
-                        Cancel
+                        {isArabic ? 'إلغاء' : 'Cancel'}
                       </button>
                     </div>
                   </div>
@@ -162,20 +188,20 @@ function Payment() {
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title" id="addCardModalLabel">
-                Add New Card
+                {isArabic ? 'إضافة بطاقة جديدة' : 'Add New Card'}
               </h5>
               <button
                 type="button"
                 className="btn-close"
                 data-bs-dismiss="modal"
-                aria-label="Close"
+                aria-label={isArabic ? 'إغلاق' : 'Close'}
               ></button>
             </div>
             <div className="modal-body">
               <form>
                 <div className="mb-3">
                   <label htmlFor="cardNumber" className="form-label">
-                    Card Number
+                    {isArabic ? 'رقم البطاقة' : 'Card Number'}
                   </label>
                   <input
                     type="text"
@@ -187,7 +213,7 @@ function Payment() {
                 <div className="row mb-3">
                   <div className="col-md-6">
                     <label htmlFor="expiryDate" className="form-label">
-                      Expiry Date
+                      {isArabic ? 'تاريخ الانتهاء' : 'Expiry Date'}
                     </label>
                     <input
                       type="text"
@@ -198,7 +224,7 @@ function Payment() {
                   </div>
                   <div className="col-md-6">
                     <label htmlFor="cvv" className="form-label">
-                      CVV
+                      {isArabic ? 'CVV' : 'CVV'}
                     </label>
                     <input
                       type="text"
@@ -210,7 +236,7 @@ function Payment() {
                 </div>
                 <div className="mb-3">
                   <label htmlFor="cardholderName" className="form-label">
-                    Cardholder Name
+                    {isArabic ? 'اسم حامل البطاقة' : 'Cardholder Name'}
                   </label>
                   <input
                     type="text"
@@ -227,14 +253,14 @@ function Payment() {
                 className="btn btn-secondary"
                 data-bs-dismiss="modal"
               >
-                Cancel
+                {isArabic ? 'إلغاء' : 'Cancel'}
               </button>
               <button
                 type="button"
                 className="btn btn-primary"
                 data-bs-dismiss="modal"
               >
-                Add Card
+                {isArabic ? 'إضافة بطاقة' : 'Add Card'}
               </button>
             </div>
           </div>

@@ -1,8 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import NavBar from './NavBar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+const getInitialLang = () => {
+  try {
+    const storedLang = localStorage.getItem('lang');
+    if (storedLang) {
+      return storedLang;
+    }
+  } catch (e) {
+    console.error("Could not access localStorage:", e);
+  }
+  return navigator.language.startsWith('ar') ? 'ar' : 'en';
+};
+
 function TripForm() {
+  const [lang, setLang] = useState(getInitialLang);
   const [model, setModel] = useState('');
   const [color, setColor] = useState('');
   const [license, setLicense] = useState('');
@@ -11,6 +24,21 @@ function TripForm() {
   const [estimatedTime, setEstimatedTime] = useState('');
   const [distance, setDistance] = useState('');
   const [cost, setCost] = useState('');
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    try {
+      const storedLang = localStorage.getItem('lang');
+      if (storedLang !== lang) {
+        localStorage.setItem('lang', lang);
+      }
+    } catch (e) {
+      console.error("Could not update localStorage:", e);
+    }
+  }, [lang]);
+
+  const isArabic = lang === 'ar';
 
   const handleCreateTrip = (e) => {
     e.preventDefault();
@@ -33,23 +61,21 @@ function TripForm() {
   };
 
   return (
-    <div className="bg-light">
+    <div className="bg-light" dir={isArabic ? 'rtl' : 'ltr'}>
       <div className="container-fluid p-0">
-
-        <NavBar/>
-        
+        <NavBar lang={lang} setLang={setLang} />
         <div className="container py-4">
           <div className="row justify-content-center">
             <div className="col-md-8">
               <div className="card shadow-sm">
                 <div className="card-header bg-white">
-                  <h4 className="mb-0">Create a Trip (Driver)</h4>
+                  <h4 className="mb-0">{isArabic ? 'إنشاء رحلة (سائق)' : 'Create a Trip (Driver)'}</h4>
                 </div>
                 <div className="card-body">
                   <form onSubmit={handleCreateTrip}>
                     <div className="row mb-3">
                       <div className="col-md-6">
-                        <label className="form-label">Model (e.g., Camry 2022)</label>
+                        <label className="form-label">{isArabic ? 'الموديل (مثال: كامري 2022)' : 'Model (e.g., Camry 2022)'}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -59,7 +85,7 @@ function TripForm() {
                         />
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label">Color (e.g., White)</label>
+                        <label className="form-label">{isArabic ? 'اللون (مثال: أبيض)' : 'Color (e.g., White)'}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -71,7 +97,7 @@ function TripForm() {
                     </div>
                     <div className="row mb-3">
                       <div className="col-md-6">
-                        <label className="form-label">License (e.g., KSA-1234)</label>
+                        <label className="form-label">{isArabic ? 'الرخصة (مثال: KSA-1234)' : 'License (e.g., KSA-1234)'}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -81,7 +107,7 @@ function TripForm() {
                         />
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label">Estimated Time (e.g., 25 min)</label>
+                        <label className="form-label">{isArabic ? 'الوقت المقدر (مثال: 25 دقيقة)' : 'Estimated Time (e.g., 25 min)'}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -93,7 +119,7 @@ function TripForm() {
                     </div>
                     <div className="row mb-3">
                       <div className="col-md-6">
-                        <label className="form-label">Distance (e.g., 12 km)</label>
+                        <label className="form-label">{isArabic ? 'المسافة (مثال: 12 كم)' : 'Distance (e.g., 12 km)'}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -103,7 +129,7 @@ function TripForm() {
                         />
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label">Cost (e.g., $15.00)</label>
+                        <label className="form-label">{isArabic ? 'التكلفة (مثال: $15.00)' : 'Cost (e.g., $15.00)'}</label>
                         <input
                           type="text"
                           className="form-control"
@@ -114,25 +140,25 @@ function TripForm() {
                       </div>
                     </div>
                     <hr />
-                    <h5 className="mb-3">Trip Route</h5>
+                    <h5 className="mb-3">{isArabic ? 'مسار الرحلة' : 'Trip Route'}</h5>
                     <div className="row mb-3">
                       <div className="col-md-6">
-                        <label className="form-label">Departure Location</label>
+                        <label className="form-label">{isArabic ? 'مكان المغادرة' : 'Departure Location'}</label>
                         <input
                           type="text"
                           className="form-control"
-                          placeholder="Dhahran"
+                          placeholder={isArabic ? 'الظهران' : 'Dhahran'}
                           required
                           value={departure}
                           onChange={(e) => setDeparture(e.target.value)}
                         />
                       </div>
                       <div className="col-md-6">
-                        <label className="form-label">Destination Location</label>
+                        <label className="form-label">{isArabic ? 'مكان الوصول' : 'Destination Location'}</label>
                         <input
                           type="text"
                           className="form-control"
-                          placeholder="Riyadh"
+                          placeholder={isArabic ? 'الرياض' : 'Riyadh'}
                           required
                           value={destination}
                           onChange={(e) => setDestination(e.target.value)}
@@ -142,14 +168,14 @@ function TripForm() {
 
                     <div className="d-grid gap-2">
                       <button type="submit" className="btn btn-primary">
-                        Create Trip
+                        {isArabic ? 'إنشاء رحلة' : 'Create Trip'}
                       </button>
                       <button
                         type="button"
                         className="btn btn-outline-secondary"
                         onClick={() => (window.location.href = '/home')}
                       >
-                        Cancel
+                        {isArabic ? 'إلغاء' : 'Cancel'}
                       </button>
                     </div>
                   </form>
@@ -158,7 +184,7 @@ function TripForm() {
             </div>
           </div>
         </div>
-      </div> 
+      </div>
     </div>
   );
 }
