@@ -15,8 +15,7 @@ function Confirmation() {
 
   return (
     <div className="bg-light">
-      <div className="container-fluid p-0">
-        
+      <div className="container-fluid p-0">        
         <NavBar/>
 
         <div className="container py-5">
