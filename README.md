@@ -105,11 +105,11 @@ Drivers can use this form to post a new trip by providing vehicle, route, and co
 - Bootstrap  
 - React.js
 
-**Backend:**  
-- Node.js  
+**Backend (coming soon):**  
+- Node.js 
 - Express.js
 
-**Database:**  
+**Database (coming soon):**  
 - MongoDB
 
 
