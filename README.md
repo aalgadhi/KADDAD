@@ -1,70 +1,133 @@
-# Getting Started with Create React App
+# KADDAD+
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A web platform that connects drivers with passengers for intercity and local rides.
+KADDAD+ allows students to register either as drivers or passengers. Passengers can browse driver profiles, compare prices, read reviews, and book one-way or round trips. Drivers can specify trip details, passenger limits, and review passengers to build trust. The platform aims to make trip planning safer, smoother, and more transparent for everyone involved.
 
-## Available Scripts
 
-In the project directory, you can run:
 
-### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 📸 Screenshots
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
 
-### `npm test`
+### 🔐 Login Page
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### `npm run build`
+The login interface allows users to securely log in using email/password or social media accounts (Google/Facebook).
+![Login Page](assets/login.png)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 🚗 Available Rides Page
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
+Shows a list of all available rides with details such as origin, destination, travel time, cost, and driver rating.  
+![Available Rides](assets/available-rides.png)
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 📍 Ride Details with Map  
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Displays a precise map location of the trip along with vehicle details, driver information, and trip summary.  
+![Trip Map and Details](assets/ride-details.png)
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 💳 Payment Page  
 
-To learn React, check out the [React documentation](https://reactjs.org/).
 
-### Code Splitting
+Users can review the trip summary and securely choose a payment method to complete the booking.  
+![Ride Payment](assets/payment.png)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-### Analyzing the Bundle Size
+### ✅ Reservation Confirmation  
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-### Making a Progressive Web App
+Confirms a successful ride booking and shows both trip and driver details, including contact and vehicle info.  
+![Reservation Confirmation](assets/reservation-confirmed.png)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
 
-### Advanced Configuration
+### 👤 User Profile Page  
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-### Deployment
+Displays account information, saved payment methods, and a history of completed rides.  
+![User Profile](assets/profile.png)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
-### `npm run build` fails to minify
+### 📝 Create Trip (Driver)  
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+Drivers can use this form to post a new trip by providing vehicle, route, and cost information.  
+![Create Trip](assets/create-trip.png)
+
+
+
+
+
+
+## 🚀 Features
+
+### 👥 User Roles
+
+#### Admin
+- Manage driver approvals and user reports
+- Review ride listings, handle disputes, process refunds
+- Send notifications and view platform analytics
+
+#### Student Driver
+- Register as a driver and upload documents for approval
+- Create, manage, and cancel ride listings
+- Accept/reject passenger requests and view earnings dashboard
+- Receive payments and rate passengers
+
+#### Student Passenger
+- Register and set preferences (e.g., preferred driver gender)
+- Search/filter available rides and view driver details
+- Book round or one-way trips, pay online, and manage bookings
+- Rate drivers and receive ride updates via email
+
+### 🛠 General Functionalities
+- User login, registration, and secure authentication
+- Password reset and email verification
+- Ride cancellation with automated refund handling
+- Notification system for ride updates and admin messages
+- Driver/passenger review system
+
+### 📈 Admin Dashboard
+- Visual analytics of active rides, earnings, disputes
+- Exportable reports
+
+
+
+## 🛠️ Tech Stack
+
+**Frontend:**  
+- HTML
+- CSS
+- JavaScript  
+- Bootstrap  
+- React.js
+
+**Backend:**  
+- Node.js  
+- Express.js
+
+**Database:**  
+- MongoDB
+
+
+## 🚀 Getting Started
+
+Follow these steps to run the project locally:
+
+```bash
+git clone https://github.com/aalgadhi/KADDAD.git
+cd path.../KADDAD
+npm install
+npm start
+```
+
+If you found some problems in running the program, please try this:
+```bash
+npm install leaflet
+npm install @fortawesome/fontawesome-free
+npm install react-router-dom
+npm run dev        // instead of npm start
+```
