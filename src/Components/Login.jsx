@@ -100,17 +100,17 @@ function Login() {
                       {lang === 'ar' ? 'تسجيل الدخول' : 'Login'}
                     </button>
                   </div>
-                  <div className="text-center">
-                    <p className="mb-0">{lang === 'ar' ? 'أو سجل الدخول باستخدام' : 'Or login using'}</p>
-                    <div className="d-flex justify-content-center mt-2">
-                      <button type="button" className="btn btn-outline-secondary mx-1">
-                        <i className="fab fa-google"></i>
-                      </button>
-                      <button type="button" className="btn btn-outline-secondary mx-1">
-                        <i className="fab fa-facebook-f"></i>
-                      </button>
-                    </div>
-                  </div>
+                    {/* <div className="text-center">
+                      <p className="mb-0">{lang === 'ar' ? 'أو سجل الدخول باستخدام' : 'Or login using'}</p>
+                      <div className="d-flex justify-content-center mt-2">
+                        <button type="button" className="btn btn-outline-secondary mx-1">
+                          <i className="fab fa-google"></i>
+                        </button>
+                        <button type="button" className="btn btn-outline-secondary mx-1">
+                          <i className="fab fa-facebook-f"></i>
+                        </button>
+                      </div>
+                    </div> */}
                 </form>
               </div>
               <div className="card-footer bg-white py-3 border-0">
