@@ -133,8 +133,8 @@ npm run dev        // instead of npm start
 ```
 
 ## Team members roles
-Ahmad Algdahi: fixed logical issues, completed the design to match the required, further splitted the code into react components, added Arabic Language support
-Alridha Almajed: converted the website into React components and fixed logical errors
-Mohammad Murtada: developed the base structure of the website in JS and HTML
-Rakan Alseed: wrote the description of the website, wrote the installation procedure, worked on final edits 
-Salman Alamri: developed the base structure of the website in JS and HTML
+Ahmad Algdahi: fixed logical issues, completed the design to match the required, further splitted the code into react components, added Arabic Language support<br>
+Alridha Almajed: converted the website into React components and fixed logical errors<br>
+Mohammad Murtada: developed the base structure of the website in JS and HTML<br>
+Rakan Alseed: wrote the description of the website, wrote the installation procedure, worked on final edits<br>
+Salman Alamri: developed the base structure of the website in JS and HTML<br>
