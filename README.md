@@ -119,7 +119,7 @@ Follow these steps to run the project locally:
 
 ```bash
 git clone https://github.com/aalgadhi/KADDAD.git
-cd path.../KADDAD
+cd KADDAD
 npm install
 npm start
 ```
