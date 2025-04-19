@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import NavBar from './NavBar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -16,44 +17,7 @@ const getInitialLang = () => {
 };
 
 function Home() {
-  const defaultRides = [
-    {
-      car: 'Camry 2025',
-      rating: '★★★★★',
-      from: 'KFUPM',
-      to: 'Al-Hasa',
-      time: '50 mins',
-      cost: '$99', // Consider localizing currency/format
-      driver: 'Reda',
-    },
-    {
-      car: 'Nissan Altima',
-      rating: '★★★★☆',
-      from: 'Riyadh',
-      to: 'KFUPM',
-      time: '3 Hours',
-      cost: '$30',
-      driver: 'Mohammed',
-    },
-    {
-      car: 'Hyundai Sonata',
-      rating: '★★★☆☆',
-      from: 'KSU',
-      to: 'Jazan',
-      time: '6 Hours',
-      cost: '$33',
-      driver: 'Ali',
-    },
-    {
-      car: 'Kia Optima',
-      rating: '★★★★☆',
-      from: 'KFU',
-      to: 'Hail',
-      time: '6 Hours',
-      cost: '$16.00',
-      driver: 'Khalid',
-    },
-  ];
+  const defaultRides = [];
 
   const [lang, setLang] = useState(getInitialLang); // Initialize synchronously
   const isArabic = lang === 'ar';
@@ -89,8 +53,8 @@ function Home() {
       combined = defaultRides.map((ride, index) => ({ ...ride, id: `default-${index}` })); // Fallback to defaults
     }
     setAllRides(combined);
-    setFilteredRides(combined); // Initialize filtered rides
-  }, []); 
+    setFilteredRides(combined); //
+  }, []);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -105,7 +69,7 @@ function Home() {
       (ride.driver?.toLowerCase() || '').includes(term) // Optional: Search by driver
     );
     setFilteredRides(results);
-  }, [searchTerm, allRides]); 
+  }, [searchTerm, allRides]);
   return (
     <div className={`bg-light ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
       <div className="container-fluid p-0">
@@ -119,19 +83,18 @@ function Home() {
                 <div className="input-group bg-ltr" dir="ltr">
                   <input
                     type="text"
-                    className={`form-control ${isArabic ? 'text-end' : ''}`} 
+                    className={`form-control ${isArabic ? 'text-end' : ''}`}
                     placeholder={isArabic ? 'ابحث عن الرحلات (المغادرة، الوجهة، السيارة...)' : 'Search rides (from, to, car...)'}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     aria-label={isArabic ? 'بحث الرحلات' : 'Search rides'}
                   />
-                  <button
-                    className="btn btn-success ms-2" 
-                    type="button"
-                    onClick={() => (window.location.href = '/trip-form')}
+                  <Link
+                    className="btn btn-success ms-2"
+                    to="/trip-form"
                   >
                     {isArabic ? 'أنشئ رحلة' : 'Create Trip'}
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -173,9 +136,9 @@ function Home() {
                           )}
                       </div>
                       <div className={`mt-auto pt-2 text-${isArabic ? 'start' : 'end'}`}> {/* Push button to bottom */}
-                          <a href="/map" className="btn btn-outline-primary btn-sm">
+                          <Link to={`/map/${ride.id}`} className="btn btn-outline-primary btn-sm">
                               {isArabic ? 'عرض التفاصيل' : 'Show Details'}
-                          </a>
+                          </Link>
                       </div>
                     </div>
                   </div>

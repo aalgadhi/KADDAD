@@ -200,7 +200,6 @@ function Profile() {
                   />
                    {isEditMode && (
                       <label htmlFor="profilePicInput" className="position-absolute bottom-0 end-0 btn btn-sm btn-light rounded-circle" style={{ transform: 'translate(25%, 25%)', cursor: 'pointer' }}>
-                        <i className="fas fa-camera"></i>
                       </label>
                     )}
                 </div>
@@ -311,7 +310,10 @@ function Profile() {
                     </tbody>
                   </table>
                 </div>
-                <div className="text-center mt-2"><a href="/my-rides" className="text-decoration-none">{isArabic ? 'عرض كل رحلاتي' : 'View My Rides'}</a></div>
+                {/*
+                                // <div className="text-center mt-2"><a href="/my-rides" className="text-decoration-none">{isArabic ? 'عرض كل رحلاتي' : 'View My Rides'}</a></div>
+
+                */}
               </div>
             </div>
           </div>
