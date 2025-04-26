@@ -1,13 +1,13 @@
 // This will have all of our component
 
-import TripForm from "./Components/TripForm";
-import Profile from "./Components/Profile";
-import Payment from "./Components/Payment";
-import MapView from "./Components/MapView";
-import Login from "./Components/Login";
-import Home from "./Components/Home";
-import Confirmation from "./Components/Confirmation";
-import SignUp from "./Components/SignUp";
+import TripForm from "./pages/TripForm";
+import Profile from "./pages/Profile";
+import Payment from "./pages/Payment";
+import MapView from "./pages/MapView";
+import Login from "./pages/Login";
+import Home from "./pages/Home";
+import Confirmation from "./pages/Confirmation";
+import SignUp from "./pages/SignUp";
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
