@@ -9,12 +9,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
+//user routes
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/users', userRoutes);
+
+//trip routes
+const tripRoutes = require('./routes/tripRoutes');
+app.use('/api/trips', tripRoutes);
 // Example route
 app.get('/', (req, res) => {
   res.send('API is running...');
 });
+
+
 
 // Connect MongoDB
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })

@@ -1,14 +1,18 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User'); // <-- Important, to load user from DB
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   let token = req.headers.authorization;
 
-  if (token) {
-    token = token.replace('Bearer ', '');
+  if (token && token.startsWith('Bearer ')) {
+    token = token.split(' ')[1]; // only the token part
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded; // { userId, email }
+
+      // fetch the full user (optional but good)
+      req.user = await User.findById(decoded.userId).select('-password');
+
       next();
     } catch (error) {
       console.error(error);
