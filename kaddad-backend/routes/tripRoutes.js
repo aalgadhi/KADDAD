@@ -41,7 +41,7 @@ router.post(
       res.status(201).json({ success:true, data:trip });
     }catch(err){
       console.error(err);
-      res.status(500).json({ success:false, error:'Server error' });
+      res.status(500).json({ success:false, error: err.message });
     }
 });
 
@@ -86,29 +86,42 @@ router.post(
 /* ───────────────────────────────────────────────
    3) BOOK TRIP – POST /api/trips/:id/book
    ─────────────────────────────────────────────── */
-router.post(
-  '/:id/book',
-  protect,
-  [ param('id').isMongoId() ],
-  async (req,res)=>{
-    const errors = validationResult(req);
-    if(!errors.isEmpty()) return sendError(res, errors);
-
-    const trip = await Trip.findById(req.params.id);
-    if(!trip)  return res.status(404).json({ success:false,error:'Trip not found' });
-    if(trip.status!=='active') return res.status(400).json({ success:false,error:'Trip not bookable' });
-    if(trip.passengers.find(p => p.user.equals(req.user._id)))
-         return res.status(400).json({ success:false,error:'Already booked' });
-    if(trip.availableSeats<1)
-         return res.status(400).json({ success:false,error:'No seats left' });
-
-    trip.passengers.push({ user:req.user._id });
-    trip.availableSeats -= 1;
-    if(trip.availableSeats===0) trip.status='full';
-    await trip.save();
-    res.json({ success:true, data:trip });
-});
-
+   router.post(
+    '/:id/book',
+    protect,
+    [ param('id').isMongoId() ],
+    async (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return sendError(res, errors);
+  
+      const trip = await Trip.findById(req.params.id);
+      if (!trip) return res.status(404).json({ success: false, error: 'Trip not found' });
+  
+      if (trip.status !== 'active') return res.status(400).json({ success: false, error: 'Trip not bookable' });
+  
+      //prevent driver from booking his own trip
+      if (trip.driver.equals(req.user._id)) {
+        return res.status(400).json({ success: false, error: 'Driver cannot book own trip' });
+      }
+  
+      if (trip.passengers.find(p => p.user.equals(req.user._id))) {
+        return res.status(400).json({ success: false, error: 'Already booked' });
+      }
+  
+      if (trip.availableSeats < 1) {
+        return res.status(400).json({ success: false, error: 'No seats left' });
+      }
+  
+      trip.passengers.push({ user: req.user._id });
+      trip.availableSeats -= 1;
+  
+      if (trip.availableSeats === 0) trip.status = 'full';
+  
+      await trip.save();
+  
+      res.json({ success: true, data: trip });
+    }
+  );
 /* ───────────────────────────────────────────────
    4) DRIVER: MY CREATED TRIPS  – GET /api/trips/my-trips
    ─────────────────────────────────────────────── */
