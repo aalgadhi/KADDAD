@@ -138,13 +138,12 @@ function TripForm() {
   };
 
   useEffect(() => {
-        delete L.Icon.Default.prototype._getIconUrl;
-        L.Icon.Default.mergeOptions({
-            iconRetinaUrl: markerIcon2x,
-            iconUrl: markerIcon,
-            shadowUrl: markerShadow,
-        });
-    }, []);
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: markerIcon2x,
+      iconUrl: markerIcon,
+      shadowUrl: markerShadow,
+    });
+  }, []);
 
   return (
     <div className="bg-light" dir={isArabic ? 'rtl' : 'ltr'}>

@@ -9,9 +9,14 @@ const protect = require('../middlewares/authMiddleware');
 const sendError = (res, errors) =>
   res.status(400).json({ success:false, error: errors.array()[0].msg });
 
+const asyncHandler = fn => (req,res,next) => Promise.resolve(fn(req,res,next)).catch(next);
+
+const isDriver = (trip, userId) =>
+  trip.driver.toString() === userId.toString();
 /* ───────────────────────────────────────────────
    1) CREATE TRIP  – POST /api/trips  (driver)
    ─────────────────────────────────────────────── */
+   
 router.post(
   '/',
   protect,
@@ -43,29 +48,40 @@ router.post(
 /* ───────────────────────────────────────────────
    2) PUBLIC LIST  – GET /api/trips
    ─────────────────────────────────────────────── */
-router.get(
-  '/',
-  [
-    query('status').optional().isIn(['active','full','completed','cancelled']),
-    query('minSeats').optional().isInt({ min:1,max:10 })
-  ],
-  async (req,res)=>{
-    const errors = validationResult(req);
-    if(!errors.isEmpty()) return sendError(res, errors);
-
-    const { status='active', from, to, minSeats } = req.query;
-    const filter = { status };
-
-    if(from) filter.from = new RegExp(from,'i');
-    if(to)   filter.to   = new RegExp(to,'i');
-    if(minSeats) filter.availableSeats = { $gte:+minSeats };
-
-    const trips = await Trip.find(filter)
-      .select('-passengers')
-      .populate('driver','firstName lastName');
-
-    res.json({ success:true, data:trips });
-});
+   router.get(
+    '/',
+    [
+      query('status').optional().isIn(['active','full','completed','cancelled']),
+      query('minSeats').optional().isInt({ min:1,max:10 })
+    ],
+    async (req,res)=>{
+      const errors = validationResult(req);
+      if(!errors.isEmpty()) return sendError(res, errors);
+  
+      const { status, from, to, minSeats } = req.query;
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+  
+      const filter = {};
+      if (status) filter.status = status;
+      if (from && from.trim().length >= 2) filter.from = new RegExp(from.trim(), 'i');
+      if (to && to.trim().length >= 2)     filter.to   = new RegExp(to.trim(), 'i');
+      if (minSeats) filter.availableSeats = { $gte: +minSeats };
+  
+      try {
+        const trips = await Trip.find(filter)
+          .select('-passengers')
+          .populate('driver', 'firstName lastName')
+          .skip(skip)
+          .limit(limit);
+  
+        res.json({ success: true, data: trips, page, limit });
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Server error' });
+      }
+  });
 
 /* ───────────────────────────────────────────────
    3) BOOK TRIP – POST /api/trips/:id/book
@@ -109,5 +125,63 @@ router.get('/my-bookings', protect, async (req,res)=>{
         .populate('driver','firstName lastName');
   res.json({ success:true, data:trips });
 });
+
+/* ───────────────────────────────────────────────
+   6) driver cancel Trip
+   ─────────────────────────────────────────────── */
+   router.patch('/:id/cancel', protect, asyncHandler(async (req, res) => {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip)  return res.status(404).json({ message: 'Trip not found' });
+  
+    if (!isDriver(trip, req.user._id))
+      return res.status(403).json({ message: 'Only driver can cancel' });
+  
+    if (trip.status !== 'active' && trip.status !== 'full')
+      return res.status(400).json({ message: `Trip already ${trip.status}` });
+  
+    trip.status       = 'cancelled';
+    trip.cancelledAt  = Date.now();
+    trip.cancelReason = req.body.reason || 'Driver cancelled';
+    await trip.save();
+  
+    res.json({ success: true, message: 'Trip cancelled', data: trip });
+  }));
+/* ───────────────────────────────────────────────
+   7) complete Trip
+   ─────────────────────────────────────────────── */
+   router.patch('/:id/complete', protect, asyncHandler(async (req, res) => {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+    if (!isDriver(trip, req.user._id))
+        return res.status(403).json({ message: 'Only driver can complete' });
+    if (trip.status !== 'active' && trip.status !== 'full')
+        return res.status(400).json({ message: `Trip already ${trip.status}` });
+  
+    trip.status      = 'completed';
+    trip.completedAt = Date.now();
+    await trip.save();
+  
+    res.json({ success: true, message: 'Trip completed', data: trip });
+  }));
+  /* ───────────────────────────────────────────────
+   8) passenger cancel booking - حاليا لاتستخدمونه لانه لجا ياكد خلاص ماينفع يكنسل
+   ─────────────────────────────────────────────── */
+   router.patch('/:id/cancel-booking', protect, asyncHandler(async (req, res) => {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+  
+    const idx = trip.passengers.findIndex(p => p.user.equals(req.user._id));
+    if (idx === -1) return res.status(400).json({ message: 'You are not booked on this trip' });
+  
+    const seatsFreed = trip.passengers[idx].seats;
+    trip.passengers.splice(idx, 1);
+    trip.availableSeats += seatsFreed;
+    if (trip.status === 'full') trip.status = 'active';
+    await trip.save();
+  
+    res.json({ success: true, message: 'Booking cancelled', data: trip });
+  }));
+
+
 
 module.exports = router;
