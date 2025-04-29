@@ -22,12 +22,7 @@ app.get('/', (req, res) => {
   res.send('API is running...');
 });
 
-app.post('/trips', (req, res) => {
-  const trip = req.body;
-  console.log('Trip received:', trip);
-  // You can save to database here
-  res.status(201).json({ message: 'Trip saved successfully!' });
-});
+
 
 
 

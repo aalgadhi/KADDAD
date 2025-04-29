@@ -70,11 +70,35 @@ function Home() {
     );
     setFilteredRides(results);
   }, [searchTerm, allRides]);
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/trips');
+        if (!response.ok) throw new Error('Failed to fetch trips');
+        const result = await response.json();
+        const trips = result.data || [];
+
+        const tripsWithIds = trips.map((ride, index) => ({
+          ...ride,
+          id: ride._id || `backend-${index}`,
+        }));
+
+        setAllRides(tripsWithIds);
+        setFilteredRides(tripsWithIds);
+      } catch (e) {
+        console.error("Error fetching trips from backend:", e);
+        setAllRides([]);
+        setFilteredRides([]);
+      }
+    };
+
+    fetchTrips();
+  }, []);
   return (
     <div className={`bg-light ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
       <div className="container-fluid p-0">
 
-      <NavBar lang={lang} setLang={setLang} />
+        <NavBar lang={lang} setLang={setLang} />
 
         <div className="bg-dark text-white py-3">
           <div className="container">
@@ -117,28 +141,28 @@ function Home() {
                         <span className="badge bg-success">{ride.rating || 'N/A'}</span>
                       </div>
                       <div className="flex-grow-1"> {/* Make text section grow */}
+                        <p className="card-text text-muted small mb-1">
+                          <i className={`fas fa-map-marker-alt ${isArabic ? 'ms-1' : 'me-1'}`}></i> {isArabic ? `من: ${ride.from || 'غير محدد'}` : `From: ${ride.from || 'N/A'}`}
+                        </p>
+                        <p className="card-text text-muted small mb-1">
+                          <i className={`fas fa-map-marker-alt ${isArabic ? 'ms-1' : 'me-1'}`}></i> {isArabic ? `إلى: ${ride.to || 'غير محدد'}` : `To: ${ride.to || 'N/A'}`}
+                        </p>
+                        <p className="card-text text-muted small mb-1">
+                          <i className={`fas fa-clock ${isArabic ? 'ms-1' : 'me-1'}`}></i> {isArabic ? `الوقت: ${ride.time || 'غير محدد'}` : `Time: ${ride.time || 'N/A'}`}
+                        </p>
+                        <p className="card-text text-muted small mb-1 fw-bold">
+                          {isArabic ? `التكلفة: ${ride.cost || 'غير محدد'}` : `Cost: ${ride.cost || 'N/A'}`}
+                        </p>
+                        {ride.driver && (
                           <p className="card-text text-muted small mb-1">
-                              <i className={`fas fa-map-marker-alt ${isArabic ? 'ms-1' : 'me-1'}`}></i> {isArabic ? `من: ${ride.from || 'غير محدد'}` : `From: ${ride.from || 'N/A'}`}
+                            <i className={`fas fa-user ${isArabic ? 'ms-1' : 'me-1'}`}></i> {isArabic ? `السائق: ${ride.driver}` : `Driver: ${ride.driver}`}
                           </p>
-                          <p className="card-text text-muted small mb-1">
-                              <i className={`fas fa-map-marker-alt ${isArabic ? 'ms-1' : 'me-1'}`}></i> {isArabic ? `إلى: ${ride.to || 'غير محدد'}` : `To: ${ride.to || 'N/A'}`}
-                          </p>
-                          <p className="card-text text-muted small mb-1">
-                              <i className={`fas fa-clock ${isArabic ? 'ms-1' : 'me-1'}`}></i> {isArabic ? `الوقت: ${ride.time || 'غير محدد'}` : `Time: ${ride.time || 'N/A'}`}
-                          </p>
-                          <p className="card-text text-muted small mb-1 fw-bold">
-                              {isArabic ? `التكلفة: ${ride.cost || 'غير محدد'}` : `Cost: ${ride.cost || 'N/A'}`}
-                          </p>
-                          {ride.driver && (
-                            <p className="card-text text-muted small mb-1">
-                                <i className={`fas fa-user ${isArabic ? 'ms-1' : 'me-1'}`}></i> {isArabic ? `السائق: ${ride.driver}` : `Driver: ${ride.driver}`}
-                            </p>
-                          )}
+                        )}
                       </div>
                       <div className={`mt-auto pt-2 text-${isArabic ? 'start' : 'end'}`}> {/* Push button to bottom */}
-                          <Link to={`/map/${ride.id}`} className="btn btn-outline-primary btn-sm">
-                              {isArabic ? 'عرض التفاصيل' : 'Show Details'}
-                          </Link>
+                        <Link to={`/map/${ride.id}`} className="btn btn-outline-primary btn-sm">
+                          {isArabic ? 'عرض التفاصيل' : 'Show Details'}
+                        </Link>
                       </div>
                     </div>
                   </div>

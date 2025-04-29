@@ -129,7 +129,7 @@ function TripForm() {
     };
 
     try {
-      const response = await fetch('http://localhost:8000/trips', {
+      const response = await fetch('http://localhost:8000/api/trips', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
