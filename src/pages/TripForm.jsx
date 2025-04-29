@@ -108,10 +108,11 @@ function TripForm() {
     }
   };
 
-  const handleCreateTrip = (e) => {
+  const handleCreateTrip = async (e) => {
     e.preventDefault();
+
     const newTrip = {
-      id: `local-${Date.now()}`, // Generate ID here
+      id: `local-${Date.now()}`,
       car: model,
       rating: '★★★☆☆',
       from: departure,
@@ -122,20 +123,30 @@ function TripForm() {
       license: license,
       distance: distance,
       driver: 'You',
-      carImage: carImage, // Save image URL to local storage
-      fromLat: departureLat,  // save lat
-      fromLng: departureLng,  // save lng
+      carImage: carImage,
+      fromLat: departureLat,
+      fromLng: departureLng,
     };
+
     try {
-      const existingTrips = JSON.parse(localStorage.getItem('driverTrips')) || [];
-      existingTrips.push(newTrip);
-      localStorage.setItem('driverTrips', JSON.stringify(existingTrips));
-      navigate('/home'); // Use navigate for redirection
+      const response = await fetch('http://localhost:8000/trips', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newTrip),
+      });
+
+      if (response.ok) {
+        navigate('/home');
+      } else {
+        console.error("Failed to save trip to backend");
+      }
     } catch (error) {
-      console.error("Could not save trip to localStorage:", error);
-      // Handle the error appropriately (e.g., display an error message)
+      console.error("Error saving trip:", error);
     }
   };
+
 
   useEffect(() => {
     L.Icon.Default.mergeOptions({
