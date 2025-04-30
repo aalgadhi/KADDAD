@@ -36,30 +36,52 @@ function SignUp() {
     }
   }, [lang]);
 
-  const handleSignUp = (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
+
     if (!firstName.trim() || !lastName.trim() || !phone.trim() || !email.trim() || !password.trim()) {
       setError(lang === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required');
       return;
     }
-    setError('');
-    const stored = JSON.parse(localStorage.getItem('users')) || [];
-    stored.push({ firstName, lastName, phone, email, password });
-    localStorage.setItem('users', JSON.stringify(stored));
-    localStorage.setItem('userName', firstName);
-    localStorage.setItem(
-      'profileData',
-      JSON.stringify({
-        firstName,
-        lastName,
-        username: firstName,
-        email,
-        phone,
-        address: '',
-      })
-    );
-    window.location.href = '/home';
+
+    try {
+      const response = await fetch('http://localhost:8000/api/users/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          phone,
+          email,
+          password,
+          address: ''  // or add a state for address
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || (lang === 'ar' ? 'خطأ في التسجيل' : 'Registration error'));
+      } else {
+        localStorage.setItem('userName', firstName);
+        localStorage.setItem('profileData', JSON.stringify({
+          firstName,
+          lastName,
+          username: firstName,
+          email,
+          phone,
+          address: '',
+        }));
+        window.location.href = '/home';
+      }
+    } catch (err) {
+      console.error(err);
+      setError(lang === 'ar' ? 'خطأ في الخادم' : 'Server error');
+    }
   };
+
 
   return (
     <div className="bg-light" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
