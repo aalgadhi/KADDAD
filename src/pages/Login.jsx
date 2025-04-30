@@ -33,22 +33,40 @@ function Login() {
     }
   }, [lang]);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+
     if (!email.trim() || !password.trim()) {
       setError(lang === 'ar' ? 'يرجى إدخال البريد وكلمة المرور' : 'Please enter both email and password');
       return;
     }
-    const stored = JSON.parse(localStorage.getItem('users')) || [];
-    const found = stored.find(u => u.email === email && u.password === password);
-    if (found) {
-      localStorage.setItem('userName', found.name);
-      setError('');
-      window.location.href = '/home';
-    } else {
-      setError(lang === 'ar' ? 'بيانات الاعتماد غير صحيحة' : 'Invalid credentials');
+
+    try {
+      const response = await fetch('http://localhost:8000/api/users/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || (lang === 'ar' ? 'خطأ في تسجيل الدخول' : 'Login error'));
+      } else {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userName', data.user.firstName || 'User');
+        localStorage.setItem('profileData', JSON.stringify(data.user));
+        setError('');
+        window.location.href = '/home';
+      }
+    } catch (err) {
+      console.error(err);
+      setError(lang === 'ar' ? 'خطأ في الخادم' : 'Server error');
     }
   };
+
 
   return (
     <div className="bg-light" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -100,7 +118,7 @@ function Login() {
                       {lang === 'ar' ? 'تسجيل الدخول' : 'Login'}
                     </button>
                   </div>
-                 
+
                 </form>
               </div>
               <div className="card-footer bg-white py-3 border-0">
