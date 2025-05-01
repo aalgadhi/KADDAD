@@ -25,7 +25,7 @@ const getInitialLang = () => {
 
 const defaultLatLng = [24.7136, 46.6753]; // Default latitude and longitude for Riyadh
 
-const defaultRides = []; 
+const defaultRides = [];
 
 function MapView() {
     const { tripId } = useParams();
@@ -90,6 +90,29 @@ function MapView() {
         }
     }, [lang, isArabic]);
 
+    const handleBookTrip = async () => {
+        try {
+            const response = await fetch(`http://localhost:5000/${tripId}/book`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('token')}`, // make sure token is stored like this
+                },
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert(isArabic ? 'تم حجز الرحلة بنجاح' : 'Trip booked successfully');
+            } else {
+                alert(result.error || (isArabic ? 'فشل في الحجز' : 'Booking failed'));
+            }
+        } catch (error) {
+            console.error('Booking error:', error);
+            alert(isArabic ? 'حدث خطأ أثناء الحجز' : 'An error occurred while booking');
+        }
+    };
+
     useEffect(() => {
         if (!trip) return;
 
@@ -144,6 +167,23 @@ function MapView() {
             </div>
         );
     }
+
+    // ✅ Add this block below your map section — anywhere in the main return of the valid trip
+
+    return (
+        <div className="container py-5 text-center">
+            <div id="map" style={{ height: '400px' }}></div>
+
+            <h3 className="mt-4">{pickupLocation}</h3>
+
+            <div className="container py-3 text-center">
+                <button className="btn btn-success" onClick={handleBookTrip}>
+                    {isArabic ? 'احجز الرحلة' : 'Book Trip'}
+                </button>
+            </div>
+        </div>
+    );
+
 
     return (
         <div className={`bg-light ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>

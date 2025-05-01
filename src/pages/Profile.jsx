@@ -36,6 +36,7 @@ function Profile() {
   const [newPayLast4, setNewPayLast4] = useState('');
   const [newPayExpires, setNewPayExpires] = useState('');
   const [paymentModalErrors, setPaymentModalErrors] = useState({ type: '', last4: '', expires: '' });
+  const [myTrips, setMyTrips] = useState([]);
 
   // Effect to sync HTML attributes and localStorage when lang changes
   useEffect(() => {
@@ -53,6 +54,115 @@ function Profile() {
 
   // Effect to load profile/payment data (runs only once on mount)
   useEffect(() => {
+    const fetchProfile = async () => {
+      // const token = localStorage.getItem('token');
+      // if (!token) return;
+
+      try {
+        const response = await fetch('http://localhost:8000/api/users/profile', {
+          method: 'GET',
+          headers: {
+            // 'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setFirstName(data.firstName || '');
+          setLastName(data.lastName || '');
+          setUsername(data.firstName || '');
+          setEmail(data.email || '');
+          setPhone(data.phone || '');
+          setAddress(data.address || '');
+          setProfilePic(data.profilePic || '');
+          localStorage.setItem('profileData', JSON.stringify(data));
+        } else {
+          console.error(data.message || 'Failed to fetch profile');
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      }
+    };
+
+    fetchProfile();
+
+    const fetchMyTrips = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const res = await fetch('http://localhost:5000/my-trips', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setMyTrips(data.data);
+        } else {
+          console.error(data.message || 'Failed to fetch trips');
+        }
+      } catch (err) {
+        console.error('Error fetching trips:', err);
+      }
+    };
+
+    fetchMyTrips();
+
+    const storedPayments = JSON.parse(localStorage.getItem('paymentMethods'));
+    if (storedPayments) {
+      setPaymentMethods(storedPayments);
+    }
+  }, []);
+
+
+  const saveData = () => {
+    const profileData = {
+      firstName, lastName, username, email, phone, address, profilePic
+    };
+    localStorage.setItem('profileData', JSON.stringify(profileData));
+    localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
+  };
+
+  const handleEdit = () => setIsEditMode(true);
+
+  const handleSave = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch('http://localhost:8000/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          phone,
+          address
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('profileData', JSON.stringify(data.user));
+        setIsEditMode(false);
+      } else {
+        console.error(data.message || 'Profile update failed');
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+    }
+  };
+
+
+  const handleCancel = () => {
+    setIsEditMode(false);
     const data = JSON.parse(localStorage.getItem('profileData'));
     if (data) {
       setFirstName(data.firstName || 'Yousef');
@@ -63,39 +173,6 @@ function Profile() {
       setAddress(data.address || 'Al-hizam KFUPM, Dhahran, Saudi Arabia');
       setProfilePic(data.profilePic || '');
     }
-    const storedPayments = JSON.parse(localStorage.getItem('paymentMethods'));
-    if (storedPayments) {
-        setPaymentMethods(storedPayments);
-    }
-  }, []);
-
-  const saveData = () => {
-    const profileData = {
-        firstName, lastName, username, email, phone, address, profilePic
-    };
-    localStorage.setItem('profileData', JSON.stringify(profileData));
-    localStorage.setItem('paymentMethods', JSON.stringify(paymentMethods));
-  };
-
-  const handleEdit = () => setIsEditMode(true);
-
-  const handleSave = () => {
-    setIsEditMode(false);
-    saveData();
-  };
-
-  const handleCancel = () => {
-    setIsEditMode(false);
-    const data = JSON.parse(localStorage.getItem('profileData'));
-     if (data) {
-       setFirstName(data.firstName || 'Yousef');
-       setLastName(data.lastName || 'Floss');
-       setUsername(data.username || 'Brq');
-       setEmail(data.email || '9aro5@gmail.com');
-       setPhone(data.phone || '+966505011222');
-       setAddress(data.address || 'Al-hizam KFUPM, Dhahran, Saudi Arabia');
-       setProfilePic(data.profilePic || '');
-     }
   };
 
   const openPaymentModal = () => {
@@ -119,14 +196,14 @@ function Profile() {
     const exp = newPayExpires.trim();
 
     if (!t) {
-        errors.type = isArabic ? 'حقل النوع مطلوب.' : 'Type field is required.'; isValid = false;
+      errors.type = isArabic ? 'حقل النوع مطلوب.' : 'Type field is required.'; isValid = false;
     }
     if (!l4 || !/^\d{4}$/.test(l4)) {
-        errors.last4 = isArabic ? 'يرجى إدخال آخر 4 أرقام بشكل صحيح.' : 'Please enter the last 4 digits correctly.'; isValid = false;
+      errors.last4 = isArabic ? 'يرجى إدخال آخر 4 أرقام بشكل صحيح.' : 'Please enter the last 4 digits correctly.'; isValid = false;
     }
     const validExp = /^(0[1-9]|1[0-2])\/\d{2}$/.test(exp);
     if (!exp || !validExp) {
-        errors.expires = isArabic ? 'يرجى إدخال تاريخ انتهاء صلاحية صالح (MM/YY).' : 'Please enter a valid expiry date (MM/YY).'; isValid = false;
+      errors.expires = isArabic ? 'يرجى إدخال تاريخ انتهاء صلاحية صالح (MM/YY).' : 'Please enter a valid expiry date (MM/YY).'; isValid = false;
     }
     setPaymentModalErrors(errors);
     if (!isValid) return;
@@ -142,7 +219,7 @@ function Profile() {
     const updated = paymentMethods.filter(pm => pm.id !== idToDelete);
     const deletedCard = paymentMethods.find(pm => pm.id === idToDelete);
     if (deletedCard?.isDefault && updated.length > 0) {
-        updated[0].isDefault = true;
+      updated[0].isDefault = true;
     }
     setPaymentMethods(updated);
     localStorage.setItem('paymentMethods', JSON.stringify(updated));
@@ -181,6 +258,63 @@ function Profile() {
 
   const handleProfilePicChange = (e) => setProfilePic(e.target.value);
 
+  const handleCancelTrip = async (tripId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const reason = prompt(isArabic ? 'سبب الإلغاء (اختياري):' : 'Cancel reason (optional):');
+
+    try {
+      const response = await fetch(`http://localhost:5000/${tripId}/cancel`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert(isArabic ? 'تم إلغاء الرحلة بنجاح' : 'Trip cancelled successfully');
+        setMyTrips(prev => prev.map(t => t._id === tripId ? result.data : t));
+      } else {
+        alert(result.message || (isArabic ? 'فشل في إلغاء الرحلة' : 'Cancellation failed'));
+      }
+    } catch (err) {
+      console.error('Error cancelling trip:', err);
+      alert(isArabic ? 'حدث خطأ أثناء الإلغاء' : 'An error occurred during cancellation');
+    }
+  };
+
+  const handleCompleteTrip = async (tripId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/${tripId}/complete`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert(isArabic ? 'تم اكتمال الرحلة' : 'Trip marked as completed');
+        setMyTrips(prev => prev.map(t => t._id === tripId ? result.data : t));
+      } else {
+        alert(result.message || (isArabic ? 'فشل في اكتمال الرحلة' : 'Completion failed'));
+      }
+    } catch (err) {
+      console.error('Error completing trip:', err);
+      alert(isArabic ? 'حدث خطأ أثناء الإكمال' : 'An error occurred during completion');
+    }
+  };
+
+
+
   return (
     <div className={`bg-light ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
       <NavBar lang={lang} setLang={setLang} />
@@ -196,12 +330,12 @@ function Profile() {
                     className="rounded-circle img-thumbnail"
                     alt={isArabic ? 'الصورة الشخصية' : 'Profile'}
                     style={{ width: '150px', height: '150px', objectFit: 'cover' }}
-                    onError={(e) => { e.target.onerror = null; e.target.src=`https://via.placeholder.com/150?text=${firstName?.[0] || '?'}` }}
+                    onError={(e) => { e.target.onerror = null; e.target.src = `https://via.placeholder.com/150?text=${firstName?.[0] || '?'}` }}
                   />
-                   {isEditMode && (
-                      <label htmlFor="profilePicInput" className="position-absolute bottom-0 end-0 btn btn-sm btn-light rounded-circle" style={{ transform: 'translate(25%, 25%)', cursor: 'pointer' }}>
-                      </label>
-                    )}
+                  {isEditMode && (
+                    <label htmlFor="profilePicInput" className="position-absolute bottom-0 end-0 btn btn-sm btn-light rounded-circle" style={{ transform: 'translate(25%, 25%)', cursor: 'pointer' }}>
+                    </label>
+                  )}
                 </div>
                 <h4 className="mb-1">{firstName} {lastName}</h4>
                 <p className="text-muted mb-3">@{username}</p>
@@ -264,7 +398,7 @@ function Profile() {
                     <div className="mb-3">
                       <label className="form-label">{isArabic ? 'رابط الصورة الشخصية (اختياري)' : 'Profile Image URL (optional)'}</label>
                       <input type="url" className="form-control" placeholder={isArabic ? 'https://example.com/image.jpg' : 'https://your-image-link.jpg'} value={profilePic} onChange={handleProfilePicChange} />
-                       {profilePic && <img src={profilePic} alt="Preview" style={{width: '50px', height: '50px', objectFit: 'cover', marginTop: '10px'}} onError={(e) => { e.target.style.display='none'; }} onLoad={(e) => { e.target.style.display='inline-block'; }}/>}
+                      {profilePic && <img src={profilePic} alt="Preview" style={{ width: '50px', height: '50px', objectFit: 'cover', marginTop: '10px' }} onError={(e) => { e.target.style.display = 'none'; }} onLoad={(e) => { e.target.style.display = 'inline-block'; }} />}
                     </div>
                   )}
                 </form>
@@ -281,7 +415,7 @@ function Profile() {
                 {paymentMethods.map((pm) => (
                   <div key={pm.id} className="d-flex justify-content-between align-items-center mb-3 p-2 border rounded flex-wrap">
                     <div className={`d-flex align-items-center ${isArabic ? 'ms-md-0' : 'me-md-3'} mb-2 mb-md-0`}>
-                      <i className={`fab fa-cc-${pm.type.toLowerCase().includes('visa')?'visa': pm.type.toLowerCase().includes('master') || pm.type.toLowerCase().includes('ماستر')?'mastercard': pm.type.toLowerCase().includes('paypal') || pm.type.toLowerCase().includes('باي')?'paypal':'credit-card'} fa-2x text-primary ${isArabic ? 'ms-3' : 'me-3'}`}></i>
+                      <i className={`fab fa-cc-${pm.type.toLowerCase().includes('visa') ? 'visa' : pm.type.toLowerCase().includes('master') || pm.type.toLowerCase().includes('ماستر') ? 'mastercard' : pm.type.toLowerCase().includes('paypal') || pm.type.toLowerCase().includes('باي') ? 'paypal' : 'credit-card'} fa-2x text-primary ${isArabic ? 'ms-3' : 'me-3'}`}></i>
                       <div>
                         <p className="mb-0 fw-bold">{pm.type} {isArabic ? 'ينتهي بـ' : 'ending in'} {pm.last4}</p>
                         <p className="mb-0 small text-muted">{isArabic ? 'تنتهي الصلاحية' : 'Expires'} {pm.expires}</p>
@@ -296,26 +430,66 @@ function Profile() {
                 ))}
               </div>
             </div>
-
             <div className="card shadow-sm">
-              <div className="card-header bg-white"><h5 className="mb-0">{isArabic ? 'الرحلات الأخيرة' : 'Recent Rides'}</h5></div>
+              <div className="card-header bg-white"><h5 className="mb-0">{isArabic ? 'رحلاتي كسائق' : 'My Trips as Driver'}</h5></div>
               <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table table-hover">
-                    <thead><tr><th>{isArabic ? 'التاريخ' : 'Date'}</th><th>{isArabic ? 'من' : 'From'}</th><th>{isArabic ? 'إلى' : 'To'}</th><th>{isArabic ? 'المبلغ' : 'Amount'}</th><th>{isArabic ? 'الحالة' : 'Status'}</th></tr></thead>
-                    <tbody>
-                      <tr><td>{isArabic ? '١٠ أبريل ٢٠٢٥' : 'Apr 10, 2025'}</td><td>{isArabic ? 'وسط المدينة' : 'Downtown'}</td><td>{isArabic ? 'المطار' : 'Airport'}</td><td>$18.00</td><td><span className="badge bg-success">{isArabic ? 'مكتملة' : 'Completed'}</span></td></tr>
-                      <tr><td>{isArabic ? '٥ أبريل ٢٠٢٥' : 'Apr 5, 2025'}</td><td>{isArabic ? 'المول' : 'Mall'}</td><td>{isArabic ? 'الجامعة' : 'University'}</td><td>$12.50</td><td><span className="badge bg-success">{isArabic ? 'مكتملة' : 'Completed'}</span></td></tr>
-                      <tr><td>{isArabic ? '٢٨ مارس ٢٠٢٥' : 'Mar 28, 2025'}</td><td>{isArabic ? 'المستشفى' : 'Hospital'}</td><td>{isArabic ? 'المنزل' : 'Home'}</td><td>$15.75</td><td><span className="badge bg-success">{isArabic ? 'مكتملة' : 'Completed'}</span></td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                {/*
-                                // <div className="text-center mt-2"><a href="/my-rides" className="text-decoration-none">{isArabic ? 'عرض كل رحلاتي' : 'View My Rides'}</a></div>
+                {myTrips.length === 0 ? (
+                  <p className="text-muted">{isArabic ? 'لا توجد رحلات حتى الآن.' : 'No trips found.'}</p>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>{isArabic ? 'من' : 'From'}</th>
+                          <th>{isArabic ? 'إلى' : 'To'}</th>
+                          <th>{isArabic ? 'الحالة' : 'Status'}</th>
+                          <th>{isArabic ? 'الإجراء' : 'Action'}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {myTrips.map(trip => (
+                          <tr key={trip._id}>
+                            <td>{trip.from}</td>
+                            <td>{trip.to}</td>
+                            <td>
+                              <span className={`badge ${trip.status === 'cancelled' ? 'bg-secondary' : 'bg-info'}`}>
+                                {isArabic && trip.status === 'cancelled' ? 'ملغاة' :
+                                  isArabic && trip.status === 'active' ? 'نشطة' :
+                                    isArabic && trip.status === 'full' ? 'ممتلئة' :
+                                      trip.status}
+                              </span>
+                            </td>
+                            <td>
+                              {trip.status === 'active' || trip.status === 'full' ? (
+                                <>
+                                  <button
+                                    className="btn btn-sm btn-danger me-2"
+                                    onClick={() => handleCancelTrip(trip._id)}
+                                  >
+                                    {isArabic ? 'إلغاء' : 'Cancel'}
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-success"
+                                    onClick={() => handleCompleteTrip(trip._id)}
+                                  >
+                                    {isArabic ? 'اكتمال' : 'Complete'}
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-muted">{isArabic ? 'لا يمكن الإلغاء' : 'Not cancellable'}</span>
+                              )}
+                            </td>
 
-                */}
+                          </tr>
+                        ))}
+                      </tbody>
+
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -333,13 +507,13 @@ function Profile() {
                 <div className="modal-body">
                   <div className="mb-3">
                     <label htmlFor="payTypeInput" className="form-label">{isArabic ? 'النوع (مثال: فيزا)' : 'Type (e.g., Visa)'}</label>
-                    <input type="text" id="payTypeInput" className={`form-control ${paymentModalErrors.type ? 'is-invalid' : ''}`} value={newPayType} onChange={e => {setNewPayType(e.target.value);if (paymentModalErrors.type) setPaymentModalErrors(prev => ({ ...prev, type: '' }));}} required />
+                    <input type="text" id="payTypeInput" className={`form-control ${paymentModalErrors.type ? 'is-invalid' : ''}`} value={newPayType} onChange={e => { setNewPayType(e.target.value); if (paymentModalErrors.type) setPaymentModalErrors(prev => ({ ...prev, type: '' })); }} required />
                     {paymentModalErrors.type && <div className="invalid-feedback">{paymentModalErrors.type}</div>}
                   </div>
                   <div className="mb-3">
                     <label htmlFor="payLast4Input" className="form-label">{isArabic ? 'آخر 4 أرقام' : 'Last 4 Digits'}</label>
                     <input type="text" id="payLast4Input" className={`form-control ${paymentModalErrors.last4 ? 'is-invalid' : ''}`} maxLength={4} value={newPayLast4} onChange={handleLast4Change} required inputMode="numeric" pattern="\d{4}" />
-                     {paymentModalErrors.last4 && <div className="invalid-feedback">{paymentModalErrors.last4}</div>}
+                    {paymentModalErrors.last4 && <div className="invalid-feedback">{paymentModalErrors.last4}</div>}
                   </div>
                   <div className="mb-3">
                     <label htmlFor="payExpiresInput" className="form-label">{isArabic ? 'تاريخ الانتهاء (MM/YY)' : 'Expires (MM/YY)'}</label>
