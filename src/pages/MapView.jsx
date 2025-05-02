@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 import markerIcon2x from '../assets/marker-icon-2x.png';
-import markerIcon from '../assets/marker-icon.png';
+import markerIcon   from '../assets/marker-icon.png';
 import markerShadow from '../assets/marker-shadow.png';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -17,29 +17,29 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 const getInitialLang = () =>
   localStorage.getItem('lang') || (navigator.language.startsWith('ar') ? 'ar' : 'en');
 
-const defaultLatLng = [24.7136, 46.6753]; // Riyadh
-const defaultRides  = [];                 // keep demo trips if you have any
+const defaultLatLng = [24.7136, 46.6753]; // Riyadh fallback
+const defaultRides  = [];                 // demo trips (optional)
 
 /*****************************
  * Component
  *****************************/
 export default function MapView() {
   /* ───── URL / language ───── */
-  const { tripId } = useParams();
+  const { tripId }  = useParams();
   const [lang, setLang] = useState(getInitialLang());
-  const isArabic        = lang === 'ar';
+  const isArabic    = lang === 'ar';
 
   /* ───── Data ───── */
   const [trip, setTrip]             = useState(null);
   const [pickupLocation, setPickup] = useState(null);
 
-  /* ───── Map instance ───── */
+  /* ───── Map ref ───── */
   const mapRef = useRef(null);
 
-  /* ───── Fetch a single trip from backend ───── */
+  /* ───── Fetch single trip from backend ───── */
   const fetchTripById = async (id) => {
     try {
-        const res = await fetch(`http://localhost:8000/api/trips/${id}`);
+      const res = await fetch(`http://localhost:8000/api/trips/${id}`);
       if (!res.ok) throw new Error('not-found');
       const json = await res.json();
       return json.data;
@@ -48,15 +48,16 @@ export default function MapView() {
     }
   };
 
-  /* ───── Load trip: localStorage ► backend ───── */
+  /* ───── Load trip (localStorage ► backend) ───── */
   useEffect(() => {
     (async () => {
       try {
         const localTrips = JSON.parse(localStorage.getItem('driverTrips') || '[]');
         const allTrips   = [
-          ...defaultRides.map((r, i) => ({ ...r, id: `default-${i}` })),
+          ...defaultRides.map((r,i)=>({ ...r, id:`default-${i}` })),
           ...localTrips,
         ];
+
         let found = allTrips.find(t => String(t.id) === String(tripId));
         if (!found) found = await fetchTripById(tripId);
 
@@ -66,9 +67,9 @@ export default function MapView() {
         /* reverse‑geocode pickup */
         if (found.fromLat !== undefined && found.fromLng !== undefined) {
           fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${found.fromLat}&lon=${found.fromLng}`)
-            .then(r => r.json())
-            .then(d => setPickup(d.display_name || `Lat: ${found.fromLat}, Lng: ${found.fromLng}`))
-            .catch(() => setPickup(`Lat: ${found.fromLat}, Lng: ${found.fromLng}`));
+            .then(r=>r.json())
+            .then(d=> setPickup(d.display_name || `Lat: ${found.fromLat}, Lng: ${found.fromLng}`))
+            .catch(()=> setPickup(`Lat: ${found.fromLat}, Lng: ${found.fromLng}`));
         } else {
           setPickup(found.from || (isArabic ? 'غير محدد' : 'N/A'));
         }
@@ -79,44 +80,48 @@ export default function MapView() {
     })();
   }, [tripId, isArabic]);
 
-  /* ───── Sync HTML lang/dir ───── */
-/* ───── Initialise / update Leaflet map ───── */
-useEffect(() => {
+  /* ───── keep <html> lang / dir in sync ───── */
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir  = isArabic ? 'rtl' : 'ltr';
+    try { localStorage.setItem('lang', lang); } catch {}
+  }, [lang, isArabic]);
+
+  /* ───── Initialise / update Leaflet map ───── */
+  useEffect(() => {
     if (!trip) return;
-  
-    // set default marker icons once
+
     delete L.Icon.Default.prototype._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: markerIcon2x,
       iconUrl: markerIcon,
       shadowUrl: markerShadow,
     });
-  
-    // don’t create a second map on re‑render
-    if (mapRef.current) return;
-  
+
+    if (mapRef.current) return; // prevent double‑init
+
     const lat = trip.fromLat ?? defaultLatLng[0];
     const lng = trip.fromLng ?? defaultLatLng[1];
-  
+
     const map = L.map('map').setView([lat, lng], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
     }).addTo(map);
-  
+
     L.marker([lat, lng])
       .addTo(map)
       .bindPopup(isArabic ? 'موقع الالتقاط' : 'Pickup Location')
       .openPopup();
-  
-    mapRef.current = map;               // store instance
-  
-    // cleanup when component unmounts or trip/lang changes
-    return () => {
+
+    mapRef.current = map;
+
+    return () => {      // cleanup
       map.remove();
       mapRef.current = null;
     };
   }, [trip, isArabic]);
-  /* ───── Booking handler (stub) ───── */
+
+  /* ───── Booking handler ───── */
   const handleBookTrip = async () => {
     try {
       const res = await fetch(`http://localhost:8000/api/trips/${tripId}/book`, {
@@ -126,9 +131,8 @@ useEffect(() => {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-  
+
       const json = await res.json();
-  
       if (json.success) {
         window.location.href = '/confirmation';
       } else {
@@ -139,6 +143,7 @@ useEffect(() => {
       alert(isArabic ? 'حدث خطأ أثناء الحجز' : 'Booking error');
     }
   };
+
   /*****************************
    * Render
    *****************************/
@@ -153,7 +158,9 @@ useEffect(() => {
     );
   }
 
-  const driverName = trip.driver ? `${trip.driver.firstName || ''} ${trip.driver.lastName || ''}`.trim() : (isArabic ? 'غير محدد' : 'Unknown');
+  const driverName = trip.driver
+    ? `${trip.driver.firstName || ''} ${trip.driver.lastName || ''}`.trim()
+    : isArabic ? 'غير محدد' : 'Unknown';
 
   return (
     <div className={`bg-light ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
@@ -191,7 +198,9 @@ useEffect(() => {
                   {/* title & rating */}
                   <h4 className="card-title">{trip.carModel || (isArabic ? 'سيارة غير محددة' : 'Unnamed Car')}</h4>
                   <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">{isArabic ? `السائق: ${driverName}` : `Driver: ${driverName}`}</span>
+                    <span className="text-muted">
+                      {isArabic ? `السائق: ${driverName}` : `Driver: ${driverName}`}
+                    </span>
                     <span className="badge bg-success">{trip.rating || 'N/A'}</span>
                   </div>
 
@@ -199,11 +208,30 @@ useEffect(() => {
 
                   {/* trip info */}
                   <div className="mb-3 small text-muted">
-                    <p className="mb-1"><i className="fas fa-map-marker-alt me-2" />{isArabic ? `موقع الالتقاط: ${pickupLocation}` : `Pickup: ${pickupLocation}`}</p>
-                    <p className="mb-1"><i className="fas fa-map-marker-alt me-2" />{isArabic ? `الوجهة: ${trip.to}` : `Destination: ${trip.to}`}</p>
-                    <p className="mb-1"><i className="fas fa-clock me-2" />{isArabic ? `الوقت: ${trip.departureTime}` : `Time: ${trip.departureTime}`}</p>
-                    <p className="mb-1"><i className="fas fa-road me-2" />{isArabic ? `المسافة: ${trip.distanceKm}` : `Distance: ${trip.distanceKm} km`}</p>
-                    <p className="mb-0"><i className="fas fa-money-bill me-2" />{isArabic ? `السعر: ${trip.cost}` : `Cost: ${trip.cost}`}</p>
+                    <p className="mb-1">
+                      <i className="fas fa-map-marker-alt me-2" />
+                      {isArabic ? `موقع الالتقاط: ${pickupLocation}` : `Pickup: ${pickupLocation}`}
+                    </p>
+                    <p className="mb-1">
+                      <i className="fas fa-map-marker-alt me-2" />
+                      {isArabic ? `الوجهة: ${trip.to}` : `Destination: ${trip.to}`}
+                    </p>
+                    <p className="mb-1">
+                      <i className="fas fa-clock me-2" />
+                      {isArabic ? `الوقت: ${trip.departureTime}` : `Time: ${trip.departureTime}`}
+                    </p>
+                    <p className="mb-1">
+                      <i className="fas fa-road me-2" />
+                      {isArabic
+                        ? `المسافة: ${trip.distanceKm ?? 'غير محدد'}`
+                        : `Distance: ${trip.distanceKm ?? 'N/A'} km`}
+                    </p>
+                    <p className="mb-0">
+                      <i className="fas fa-money-bill me-2" />
+                      {isArabic
+                        ? `السعر: ${trip.cost ?? 'غير محدد'}`
+                        : `Cost: ${trip.cost ?? 'N/A'}`}
+                    </p>
                   </div>
 
                   {/* actions */}
