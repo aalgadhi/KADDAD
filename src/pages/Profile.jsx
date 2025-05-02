@@ -55,14 +55,14 @@ function Profile() {
   // Effect to load profile/payment data (runs only once on mount)
   useEffect(() => {
     const fetchProfile = async () => {
-      // const token = localStorage.getItem('token');
-      // if (!token) return;
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
       try {
         const response = await fetch('http://localhost:8000/api/users/profile', {
           method: 'GET',
           headers: {
-            // 'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`
           }
         });
 

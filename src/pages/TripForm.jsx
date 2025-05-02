@@ -6,148 +6,102 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Import necessary marker images
+// Marker images
 import markerIcon2x from '../assets/marker-icon-2x.png';
 import markerIcon from '../assets/marker-icon.png';
 import markerShadow from '../assets/marker-shadow.png';
 
+/*****************************
+ * Helpers
+ *****************************/
 const getInitialLang = () => {
   try {
     const storedLang = localStorage.getItem('lang');
-    if (storedLang) {
-      return storedLang;
-    }
+    if (storedLang) return storedLang;
   } catch (e) {
-    console.error("Could not access localStorage:", e);
+    console.error('Could not access localStorage:', e);
   }
   return navigator.language.startsWith('ar') ? 'ar' : 'en';
 };
 
-// Component to handle map clicks and update the location
+// safely convert form values to numbers (undefined if input is empty)
+const toNumber = (value) => (value === '' ? undefined : Number(value));
+
+/*****************************
+ * Map click handler component
+ *****************************/
 function MapClickHandler({ setDepartureLocation, setDepartureLat, setDepartureLng, lang }) {
   useMapEvents({
     click: (e) => {
       const { lat, lng } = e.latlng;
-
-      // Use the 'accept-language' header to request the address in the correct language
       fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=${lang}`)
-        .then(res => res.json())
-        .then(data => {
-          let locationString = '';
-
+        .then((res) => res.json())
+        .then((data) => {
+          let loc = '';
           if (data.address) {
             const city = data.address.city || data.address.town || data.address.village || '';
             const area = data.address.neighbourhood || data.address.suburb || '';
-
-            if (city) {
-              locationString += city;
-            }
-            if (area) {
-              locationString += (locationString ? ', ' : '') + area; // Add comma if city exists
-            }
+            loc = [city, area].filter(Boolean).join(', ');
           }
-
-          if (locationString) {
-            setDepartureLocation(locationString);
-            setDepartureLat(lat);
-            setDepartureLng(lng);
-          } else {
-            setDepartureLocation(`Latitude: ${lat}, Longitude: ${lng}`); // Fallback if address not found
-            setDepartureLat(lat);
-            setDepartureLng(lng);
-          }
+          setDepartureLocation(loc || `Lat: ${lat}, Lng: ${lng}`);
+          setDepartureLat(lat);
+          setDepartureLng(lng);
         })
-        .catch(err => {
-          console.error("Error reverse geocoding:", err);
-          setDepartureLocation(`Latitude: ${lat}, Longitude: ${lng}`); // Fallback on error
+        .catch((err) => {
+          console.error('Error reverse geocoding:', err);
+          setDepartureLocation(`Lat: ${lat}, Lng: ${lng}`);
           setDepartureLat(lat);
           setDepartureLng(lng);
         });
     },
   });
-
   return null;
 }
 
-
-function TripForm() {
+/*****************************
+ * Main component
+ *****************************/
+export default function TripForm() {
+  /* ───── UI / i18n state ───── */
   const [lang, setLang] = useState(getInitialLang);
+  const isArabic = lang === 'ar';
+
+  /* ───── Car info ───── */
   const [model, setModel] = useState('');
   const [color, setColor] = useState('');
   const [license, setLicense] = useState('');
+  const [carImage, setCarImage] = useState(null);
+
+  /* ───── Trip metrics ───── */
+  const [departureTime, setDepartureTime] = useState(''); // HH:MM
+  const [duration, setDuration] = useState(''); // minutes
+  const [distance, setDistance] = useState(''); // km
+  const [cost, setCost] = useState(''); // SAR
+  const [seats, setSeats] = useState(''); // available seats
+  const [bagLimit, setBagLimit] = useState(''); // optional
+  const [preference, setPreference] = useState('Any'); // Any | Males Only | Females Only
+
+  /* ───── Locations ───── */
   const [departure, setDeparture] = useState('');
   const [departureLat, setDepartureLat] = useState(null);
   const [departureLng, setDepartureLng] = useState(null);
   const [destination, setDestination] = useState('');
-  const [estimatedTime, setEstimatedTime] = useState('');
-  const [distance, setDistance] = useState('');
-  const [cost, setCost] = useState('');
-  const [carImage, setCarImage] = useState(null); // State for car image
-  const navigate = useNavigate(); // Hook for navigation
-  const mapRef = useRef(null); // Ref for the map instance
+  const [locError, setLocError] = useState(false);
 
+  /* ───── Hooks ───── */
+  const navigate = useNavigate();
+  const mapRef = useRef(null);
 
+  /* Persist language in <html> and localStorage */
   useEffect(() => {
     document.documentElement.lang = lang;
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = isArabic ? 'rtl' : 'ltr';
     try {
-      const storedLang = localStorage.getItem('lang');
-      if (storedLang !== lang) {
-        localStorage.setItem('lang', lang);
-      }
-    } catch (e) {
-      console.error("Could not update localStorage:", e);
-    }
-  }, [lang]);
+      localStorage.setItem('lang', lang);
+    } catch {}
+  }, [lang, isArabic]);
 
-  const isArabic = lang === 'ar';
-
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setCarImage(URL.createObjectURL(e.target.files[0])); // Create URL for preview
-    }
-  };
-
-  const handleCreateTrip = async (e) => {
-    e.preventDefault();
-
-    const newTrip = {
-      id: `local-${Date.now()}`,
-      car: model,
-      rating: '★★★☆☆',
-      from: departure,
-      to: destination,
-      time: estimatedTime,
-      cost: cost,
-      color: color,
-      license: license,
-      distance: distance,
-      driver: 'You',
-      carImage: carImage,
-      fromLat: departureLat,
-      fromLng: departureLng,
-    };
-
-    try {
-      const response = await fetch('http://localhost:8000/api/trips', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newTrip),
-      });
-
-      if (response.ok) {
-        navigate('/home');
-      } else {
-        console.error("Failed to save trip to backend");
-      }
-    } catch (error) {
-      console.error("Error saving trip:", error);
-    }
-  };
-
-
+  /* Configure Leaflet default icons once */
   useEffect(() => {
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: markerIcon2x,
@@ -156,160 +110,201 @@ function TripForm() {
     });
   }, []);
 
+  /* ───── Image preview handler ───── */
+  const handleImageChange = (e) => {
+    if (e.target.files?.[0]) {
+      setCarImage(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+
+  /* ───── Submit handler ───── */
+  const handleCreateTrip = async (e) => {
+    e.preventDefault();
+
+    // validate pickup location first
+    if (!departure) {
+      setLocError(true);
+      return;
+    }
+
+    const newTrip = {
+      from: departure,
+      to: destination,
+      departureTime,
+      distanceKm: toNumber(distance),
+      estimatedDurationMinutes: toNumber(duration),
+      cost: toNumber(cost),
+      availableSeats: toNumber(seats),
+      carModel: model,
+      carColor: color,
+      carLicensePlate: license,
+      driverPreference: preference,
+      passengerBagLimit: toNumber(bagLimit),
+    };
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in again – token missing.');
+        return;
+      }
+
+      const res = await fetch('http://localhost:8000/api/trips', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newTrip),
+      });
+
+      if (res.ok) {
+        navigate('/home');
+      } else {
+        const err = await res.json();
+        console.error('Validation errors:', err);
+        alert('Unable to create trip – please check your inputs.');
+      }
+    } catch (err) {
+      console.error('Error saving trip:', err);
+      alert('Network error – please try again later.');
+    }
+  };
+
+  /*****************************
+   * Render
+   *****************************/
   return (
     <div className="bg-light" dir={isArabic ? 'rtl' : 'ltr'}>
       <div className="container-fluid p-0">
         <NavBar lang={lang} setLang={setLang} />
         <div className="container py-4">
           <div className="row justify-content-center">
-            <div className="col-md-8">
+            <div className="col-md-9 col-lg-8">
               <div className="card shadow-sm">
                 <div className="card-header bg-white">
-                  <h4 className="mb-0">{isArabic ? 'إنشاء رحلة (سائق)' : 'Create a Trip (Driver)'}</h4>
+                  <h4 className="mb-0">
+                    {isArabic ? 'إنشاء رحلة (سائق)' : 'Create a Trip (Driver)'}
+                  </h4>
                 </div>
                 <div className="card-body">
                   <form onSubmit={handleCreateTrip}>
+                    {/* Car details */}
                     <div className="row mb-3">
-                      <div className="col-md-6">
-                        <label className="form-label">{isArabic ? 'الموديل (مثال: كامري 2022)' : 'Model (e.g., Camry 2022)'}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          required
-                          value={model}
-                          onChange={(e) => setModel(e.target.value)}
-                        />
+                      <div className="col-md-4">
+                        <label className="form-label">
+                          {isArabic ? 'الموديل' : 'Car Model'}<span className="text-danger">*</span>
+                        </label>
+                        <input type="text" className="form-control" value={model} onChange={(e) => setModel(e.target.value)} required />
                       </div>
-                      <div className="col-md-6">
-                        <label className="form-label">{isArabic ? 'اللون (مثال: أبيض)' : 'Color (e.g., White)'}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          required
-                          value={color}
-                          onChange={(e) => setColor(e.target.value)}
-                        />
+                      <div className="col-md-4">
+                        <label className="form-label">
+                          {isArabic ? 'اللون' : 'Color'}<span className="text-danger">*</span>
+                        </label>
+                        <input type="text" className="form-control" value={color} onChange={(e) => setColor(e.target.value)} required />
                       </div>
-                    </div>
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <label className="form-label">{isArabic ? 'اللوحة (مثال: KSA-1234)' : 'License Plate (e.g., KSA-1234)'}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          required
-                          value={license}
-                          onChange={(e) => setLicense(e.target.value)}
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label">{isArabic ? 'الوقت المقدر (مثال: 25 دقيقة)' : 'Estimated Time (e.g., 25 min)'}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          required
-                          value={estimatedTime}
-                          onChange={(e) => setEstimatedTime(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <label className="form-label">{isArabic ? 'المسافة (مثال: 12 كم)' : 'Distance (e.g., 12 km)'}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          required
-                          value={distance}
-                          onChange={(e) => setDistance(e.target.value)}
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label">{isArabic ? 'التكلفة (مثال: 50.00ريال)' : 'Cost (e.g., ريال50.00)'}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          required
-                          value={cost}
-                          onChange={(e) => setCost(e.target.value)}
-                        />
+                      <div className="col-md-4">
+                        <label className="form-label">
+                          {isArabic ? 'اللوحة' : 'License Plate'}<span className="text-danger">*</span>
+                        </label>
+                        <input type="text" className="form-control" value={license} onChange={(e) => setLicense(e.target.value)} required />
                       </div>
                     </div>
 
-                    {/* Car Image Upload */}
+                    {/* Trip metrics */}
+                    <div className="row mb-3">
+                      <div className="col-md-3">
+                        <label className="form-label">
+                          {isArabic ? 'وقت المغادرة' : 'Departure Time'}<span className="text-danger">*</span>
+                        </label>
+                        <input type="time" className="form-control" value={departureTime} onChange={(e) => setDepartureTime(e.target.value)} required />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">
+                          {isArabic ? 'المدة (د)' : 'Duration (min)'}<span className="text-danger">*</span>
+                        </label>
+                        <input type="number" min="1" max="600" className="form-control" value={duration} onChange={(e) => setDuration(e.target.value)} required />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">
+                          {isArabic ? 'المسافة (كم)' : 'Distance (km)'}<span className="text-danger">*</span>
+                        </label>
+                        <input type="number" min="1" max="1000" className="form-control" value={distance} onChange={(e) => setDistance(e.target.value)} required />
+                      </div>
+                      <div className="col-md-3">
+                        <label className="form-label">
+                          {isArabic ? 'التكلفة (ر.س)' : 'Cost (SAR)'}<span className="text-danger">*</span>
+                        </label>
+                        <input type="number" step="0.5" min="1" className="form-control" value={cost} onChange={(e) => setCost(e.target.value)} required />
+                      </div>
+                    </div>
+
+                    <div className="row mb-3">
+                      <div className="col-md-4">
+                        <label className="form-label">
+                          {isArabic ? 'عدد المقاعد' : 'Seats'}<span className="text-danger">*</span>
+                        </label>
+                        <input type="number" min="1" max="10" className="form-control" value={seats} onChange={(e) => setSeats(e.target.value)} required />
+                      </div>
+                      <div className="col-md-4">
+                        <label className="form-label">
+                          {isArabic ? 'حد الحقائب' : 'Bag Limit'}
+                        </label>
+                        <input type="number" min="0" max="5" className="form-control" value={bagLimit} onChange={(e) => setBagLimit(e.target.value)} />
+                      </div>
+                      <div className="col-md-4">
+                        <label className="form-label">
+                          {isArabic ? 'تفضيل الركاب' : 'Passenger Preference'}
+                        </label>
+                        <select className="form-select" value={preference} onChange={(e) => setPreference(e.target.value)}>
+                          <option value="Any">{isArabic ? 'أي' : 'Any'}</option>
+                          <option value="Males Only">{isArabic ? 'ذكور فقط' : 'Males Only'}</option>
+                          <option value="Females Only">{isArabic ? 'إناث فقط' : 'Females Only'}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Car image */}
                     <div className="mb-3">
                       <label className="form-label">{isArabic ? 'صورة السيارة' : 'Car Image'}</label>
-                      <input
-                        type="file"
-                        className="form-control"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                      />
+                      <input type="file" accept="image/*" className="form-control" onChange={handleImageChange} />
                       {carImage && (
-                        <img
-                          src={carImage}
-                          alt="Car Preview"
-                          className="img-thumbnail mt-2"
-                          style={{ maxWidth: '200px' }}
-                        />
+                        <img src={carImage} alt="preview" className="img-thumbnail mt-2" style={{ maxWidth: 200 }} />
                       )}
                     </div>
-                    <hr />
-                    <h5 className="mb-3">{isArabic ? 'مسار الرحلة' : 'Trip Route'}</h5>
 
-                    {/* Leaflet Map */}
+                    {/* Map picker */}
+                    <hr />
+                    <h5 className="mb-3">{isArabic ? 'مسار الرحلة' : 'Trip Route'}<span className="text-danger">*</span></h5>
                     <div className="mb-3">
-                      <label className="form-label">{isArabic ? 'مكان المغادرة' : 'Pickup Location'}</label>
-                      {departure && <p>{isArabic ? 'الموقع المحدد:' : 'Selected Location:'} {departure}</p>}
-                      <div style={{ height: '300px', width: '100%' }}>
-                        <MapContainer
-                          ref={mapRef}
-                          center={[26.309481137282766, 50.14613563325346]}
-                          zoom={13}
-                          style={{ height: '300px', width: '100%' }}
-                        >
-                          <TileLayer
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                          />
-                          <MapClickHandler
-                            setDepartureLocation={setDeparture}
-                            setDepartureLat={setDepartureLat}
-                            setDepartureLng={setDepartureLng}
-                            lang={lang} // Pass the language to the component
-                          />
-                          {departureLat && departureLng && (
-                            <Marker position={[departureLat, departureLng]} >
-                            </Marker>
-                          )}
+                      <label className="form-label">{isArabic ? 'مكان المغادرة' : 'Pickup Location'}<span className="text-danger">*</span></label>
+                      {departure && <p className="small text-muted">{departure}</p>}
+                      {locError && !departure && (
+                        <p className="text-danger small mb-1">{isArabic ? 'يجب اختيار موقع الانطلاق من الخريطة' : 'Please pick a pickup location from the map.'}</p>
+                      )}
+                      <div style={{ height: 300, width: '100%' }}>
+                        <MapContainer ref={mapRef} center={[26.30948, 50.14613]} zoom={13} style={{ height: '100%', width: '100%' }}>
+                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap contributors" />
+                          <MapClickHandler setDepartureLocation={setDeparture} setDepartureLat={setDepartureLat} setDepartureLng={setDepartureLng} lang={lang} />
+                          {departureLat && departureLng && <Marker position={[departureLat, departureLng]} />}
                         </MapContainer>
                       </div>
                     </div>
 
-                    <div className="row mb-3">
-
-
+                    {/* Destination */}
+                    <div className="row mb-4">
                       <div className="col-md-6">
-                        <label className="form-label">{isArabic ? 'مكان الوصول' : 'Destination Location'}</label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder={isArabic ? 'الرياض' : 'Riyadh'}
-                          required
-                          value={destination}
-                          onChange={(e) => setDestination(e.target.value)}
-                        />
+                        <label className="form-label">{isArabic ? 'مكان الوصول' : 'Destination'}<span className="text-danger">*</span></label>
+                        <input type="text" className="form-control" value={destination} onChange={(e) => setDestination(e.target.value)} required />
                       </div>
                     </div>
 
+                    {/* Actions */}
                     <div className="d-grid gap-2">
                       <button type="submit" className="btn btn-primary">
                         {isArabic ? 'إنشاء رحلة' : 'Create Trip'}
                       </button>
-                      <Link
-                        to="/home"
-                        className="btn btn-outline-secondary"
-                      >
+                      <Link to="/home" className="btn btn-outline-secondary">
                         {isArabic ? 'إلغاء' : 'Cancel'}
                       </Link>
                     </div>
@@ -323,5 +318,3 @@ function TripForm() {
     </div>
   );
 }
-
-export default TripForm;

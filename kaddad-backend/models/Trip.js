@@ -32,8 +32,8 @@ const tripSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  availableSeats: {      // 👈 ADD THIS FIELD!
-    type: Number,
+  availableSeats: {      
+    type:String,
     required: true,
   },
   carModel: {
