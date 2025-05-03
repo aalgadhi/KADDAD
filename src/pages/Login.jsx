@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -19,6 +20,7 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate(); // Get navigate function
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -58,8 +60,15 @@ function Login() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userName', data.user.firstName || 'User');
         localStorage.setItem('profileData', JSON.stringify(data.user));
+        localStorage.setItem('isAdmin', data.isAdmin); // Store isAdmin
         setError('');
-        window.location.href = '/home';
+
+        if (data.isAdmin) {
+          navigate('/admin');
+        } else {
+          navigate('/home');
+        }
+
       }
     } catch (err) {
       console.error(err);

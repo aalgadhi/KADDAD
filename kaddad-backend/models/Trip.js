@@ -12,11 +12,11 @@ const tripSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  fromLat: {          
+  fromLat: {
     type: Number,
     required: true,
   },
-  fromLng: {         
+  fromLng: {
     type: Number,
     required: true,
   },
@@ -64,6 +64,14 @@ const tripSchema = new mongoose.Schema({
   passengerBagLimit: {
     type: Number,
     default: 0,
+  },
+  carImage: {          // Add this field
+        type: Buffer,    // Store the image as a Buffer (binary data)
+        required: false  // Adjust as needed
+  },
+  carImageType: {     // Optionally store the MIME type
+        type: String,
+        required: false
   },
   passengers: [
     {
