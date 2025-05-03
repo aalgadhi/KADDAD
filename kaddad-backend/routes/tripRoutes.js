@@ -314,6 +314,65 @@ router.patch('/:id/cancel-booking', protect, [param('id').isMongoId().withMessag
 
     res.json({ success: true, message: 'Your booking has been cancelled', data: trip });
 }));
+/* ───────────────────────────────────────────────
+   9) PASSENGER: RATE TRIP  – POST /api/trips/:id/rate
+   ─────────────────────────────────────────────── */
+   router.post(
+    '/:id/rate',
+    protect,
+    [
+      param('id').isMongoId(),
+      body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5')
+    ],
+    asyncHandler(async (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return sendError(res, errors);
+  
+      const trip = await Trip.findById(req.params.id);
+      if (!trip) return res.status(404).json({ message: 'Trip not found' });
+  
+      // هل المستخدم هو راكب فعلاً في الرحلة؟
+      const isPassenger = trip.passengers.some(p => p.user.equals(req.user._id));
+      if (!isPassenger) {
+        return res.status(403).json({ message: 'You can only rate trips you booked' });
+      }
+  
+      // نضيف التقييم
+      trip.rating = req.body.rating;
+      await trip.save();
+  
+      res.json({ success: true, message: 'Rating submitted successfully', data: trip });
+    })
+  );
+/* ───────────────────────────────────────────────
+   10) DRIVER: VIEW PASSENGERS FOR TRIP
+   ─────────────────────────────────────────────── */
+   router.get(
+    '/:id/passengers',
+    protect,
+    [param('id').isMongoId().withMessage('Invalid Trip ID')],
+    asyncHandler(async (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return sendError(res, errors);
+  
+      const trip = await Trip.findById(req.params.id).populate('passengers.user', 'firstName lastName email');
+      if (!trip) return res.status(404).json({ message: 'Trip not found' });
+  
+      // هل المستخدم هو السائق؟
+      if (!trip.driver.equals(req.user._id)) {
+        return res.status(403).json({ message: 'Only the driver can view passengers' });
+      }
+  
+      const passengers = trip.passengers.map(p => ({
+        firstName: p.user.firstName,
+        lastName: p.user.lastName,
+        email: p.user.email
+      }));
+  
+      res.json({ success: true, passengers });
+    })
+  );
+  
 
 router.get(
   '/:id',
