@@ -313,6 +313,34 @@ router.patch('/:id/cancel-booking', protect, asyncHandler(async (req, res) => {
       res.json({ success: true, message: 'Rating submitted successfully', data: trip });
     })
   );
+/* ───────────────────────────────────────────────
+   10) DRIVER: VIEW PASSENGERS FOR TRIP
+   ─────────────────────────────────────────────── */
+   router.get(
+    '/:id/passengers',
+    protect,
+    [param('id').isMongoId().withMessage('Invalid Trip ID')],
+    asyncHandler(async (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return sendError(res, errors);
+  
+      const trip = await Trip.findById(req.params.id).populate('passengers.user', 'firstName lastName email');
+      if (!trip) return res.status(404).json({ message: 'Trip not found' });
+  
+      // هل المستخدم هو السائق؟
+      if (!trip.driver.equals(req.user._id)) {
+        return res.status(403).json({ message: 'Only the driver can view passengers' });
+      }
+  
+      const passengers = trip.passengers.map(p => ({
+        firstName: p.user.firstName,
+        lastName: p.user.lastName,
+        email: p.user.email
+      }));
+  
+      res.json({ success: true, passengers });
+    })
+  );
   
 
 //fetch the trip details by id
