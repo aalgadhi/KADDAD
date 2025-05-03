@@ -71,6 +71,7 @@ export default function TripForm() {
   const [color, setColor] = useState('');
   const [license, setLicense] = useState('');
   const [carImage, setCarImage] = useState(null);
+  const [carImageFile, setCarImageFile] = useState(null);  // Store the actual file
 
   /* ───── Trip metrics ───── */
   const [departureTime, setDepartureTime] = useState(''); // HH:MM
@@ -114,64 +115,70 @@ export default function TripForm() {
   const handleImageChange = (e) => {
     if (e.target.files?.[0]) {
       setCarImage(URL.createObjectURL(e.target.files[0]));
+      setCarImageFile(e.target.files[0]); // Store the file
+    } else {
+      setCarImage(null);
+      setCarImageFile(null);
     }
   };
 
   /* ───── Submit handler ───── */
-// in TripForm.jsx
-const handleCreateTrip = async (e) => {
-  e.preventDefault();
+  const handleCreateTrip = async (e) => {
+    e.preventDefault();
 
-  if (!departure) {
-    setLocError(true);
-    return;
-  }
-
-  const newTrip = {
-    from: departure,
-    fromLat: departureLat,
-    fromLng: departureLng,
-    to: destination,
-    departureTime,
-    distanceKm: toNumber(distance),
-    estimatedDurationMinutes: toNumber(duration),
-    cost: toNumber(cost),
-    availableSeats: seats,            // string is fine per your schema
-    carModel: model.trim(),
-    carColor: color.trim(),
-    carLicensePlate: license.trim(),
-    driverPreference: preference,
-    passengerBagLimit: toNumber(bagLimit),
-  };
-
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('Please log in again – token missing.');
+    if (!departure) {
+      setLocError(true);
       return;
     }
 
-    const res = await fetch('http://localhost:8000/api/trips', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(newTrip),
-    });
+    const formData = new FormData();
 
-    if (res.ok) {
-      navigate('/home');
-    } else {
-      const err = await res.json();
-      console.error('Validation errors:', err);
-      alert('Unable to create trip – please check your inputs.');
+    formData.append('from', departure);
+    formData.append('fromLat', departureLat);
+    formData.append('fromLng', departureLng);
+    formData.append('to', destination);
+    formData.append('departureTime', departureTime);
+    formData.append('distanceKm', toNumber(distance));
+    formData.append('estimatedDurationMinutes', toNumber(duration));
+    formData.append('cost', toNumber(cost));
+    formData.append('availableSeats', seats);            // string is fine per your schema
+    formData.append('carModel', model.trim());
+    formData.append('carColor', color.trim());
+    formData.append('carLicensePlate', license.trim());
+    formData.append('driverPreference', preference);
+    formData.append('passengerBagLimit', toNumber(bagLimit));
+
+    if (carImageFile) {
+      formData.append('carImage', carImageFile); // Append the image file
     }
-  } catch (err) {
-    console.error('Error saving trip:', err);
-    alert('Network error – please try again later.');
-  }
-};
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in again – token missing.');
+        return;
+      }
+
+      const res = await fetch('http://localhost:8000/api/trips', {
+        method: 'POST',
+        headers: {  //Remove Content-Type header when using FormData
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (res.ok) {
+        navigate('/home');
+      } else {
+        const err = await res.json();
+        console.error('Validation errors:', err);
+        alert('Unable to create trip – please check your inputs.');
+      }
+    } catch (err) {
+      console.error('Error saving trip:', err);
+      alert('Network error – please try again later.');
+    }
+  };
 
   /*****************************
    * Render

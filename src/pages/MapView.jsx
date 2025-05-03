@@ -32,6 +32,7 @@ export default function MapView() {
   /* ───── Data ───── */
   const [trip, setTrip]             = useState(null);
   const [pickupLocation, setPickup] = useState(null);
+  const [imageURL, setImageURL] = useState(null); // To store the image URL
 
   /* ───── Map ref ───── */
   const mapRef = useRef(null);
@@ -60,8 +61,10 @@ export default function MapView() {
 
         let found = allTrips.find(t => String(t.id) === String(tripId));
         if (!found) found = await fetchTripById(tripId);
+        console.log("trip:", found);
 
         setTrip(found || null);
+
         if (!found) return;
 
         /* reverse‑geocode pickup */
@@ -79,6 +82,17 @@ export default function MapView() {
       }
     })();
   }, [tripId, isArabic]);
+
+    useEffect(() => {
+        if (trip && trip.carImage && trip.carImageType) {
+            const blob = new Blob([new Uint8Array(trip.carImage.data)], { type: trip.carImageType });
+            const url = URL.createObjectURL(blob);
+            setImageURL(url);
+            return () => URL.revokeObjectURL(url); // Clean up object URL on unmount
+        } else {
+            setImageURL(null); // Reset image URL if no image data
+        }
+    }, [trip]);
 
   /* ───── keep <html> lang / dir in sync ───── */
   useEffect(() => {
@@ -188,7 +202,7 @@ export default function MapView() {
                   {/* image */}
                   <div className="text-center mb-3">
                     <img
-                      src={trip.carImage || 'https://via.placeholder.com/300x200.png?text=No+Image'}
+                      src={imageURL || 'https://via.placeholder.com/300x200.png?text=No+Image'}
                       className="img-fluid rounded"
                       alt={trip.carModel || (isArabic ? 'سيارة غير محددة' : 'Unnamed Car')}
                       style={{ maxWidth: '100%', maxHeight: 200, objectFit: 'cover' }}

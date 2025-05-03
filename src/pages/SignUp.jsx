@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -22,6 +23,7 @@ function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -56,7 +58,7 @@ function SignUp() {
           phone,
           email,
           password,
-          address: ''  // or add a state for address
+          address: ''
         })
       });
 
@@ -74,7 +76,13 @@ function SignUp() {
           phone,
           address: '',
         }));
-        window.location.href = '/home';
+
+        // **IMPORTANT:** Await the completion of `localStorage.setItem`
+        // before calling `navigate`.
+
+        alert(lang === 'ar' ? 'تم التسجيل بنجاح! سيتم تحويلك إلى صفحة تسجيل الدخول.' : 'Registration successful! You will be redirected to the login page.');
+
+        navigate('/');
       }
     } catch (err) {
       console.error(err);
@@ -189,4 +197,4 @@ function SignUp() {
   );
 }
 
-export default SignUp;
+export default SignUp;  
