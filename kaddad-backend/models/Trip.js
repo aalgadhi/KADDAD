@@ -1,3 +1,4 @@
+// models/Trip.js
 const mongoose = require('mongoose');
 
 const tripSchema = new mongoose.Schema({
@@ -11,13 +12,21 @@ const tripSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  fromLat: {          
+    type: Number,
+    required: true,
+  },
+  fromLng: {         
+    type: Number,
+    required: true,
+  },
   to: {
     type: String,
     required: true,
     trim: true,
   },
   departureTime: {
-    type: String, // Example: "10:30"
+    type: String, // "HH:MM"
     required: true,
   },
   distanceKm: {
@@ -32,8 +41,8 @@ const tripSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  availableSeats: {      
-    type:String,
+  availableSeats: {
+    type: String,
     required: true,
   },
   carModel: {
@@ -70,6 +79,4 @@ const tripSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-const Trip = mongoose.model('Trip', tripSchema);
-
-module.exports = Trip;
+module.exports = mongoose.model('Trip', tripSchema);

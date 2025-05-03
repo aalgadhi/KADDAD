@@ -16,35 +16,46 @@ const isDriver = (trip, userId) =>
 /* ───────────────────────────────────────────────
    1) CREATE TRIP  – POST /api/trips  (driver)
    ─────────────────────────────────────────────── */
-
-router.post(
-  '/',
-  protect,
-  [
-    body('from').trim().notEmpty(),
-    body('to').trim().notEmpty(),
-    body('departureTime').matches(/^([01]\d|2[0-3]):[0-5]\d$/),
-    body('distanceKm').isInt({ min: 1, max: 1000 }),
-    body('estimatedDurationMinutes').isInt({ min: 1, max: 600 }),
-    body('cost').isFloat({ gt: 0 }),
-    body('availableSeats').isInt({ min: 1, max: 10 }),
-    body('driverPreference').optional()
-      .isIn(['Any', 'Males Only', 'Females Only']),
-    body('passengerBagLimit').optional().isInt({ min: 0, max: 5 })
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return sendError(res, errors);
-
-    try {
-      const trip = await Trip.create({ driver: req.user._id, ...req.body });
-      res.status(201).json({ success: true, data: trip });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ success: false, error: err.message });
-    }
-  });
-
+   
+   router.post(
+     '/',
+     protect,
+     [
+       body('from').trim().notEmpty(),
+       body('fromLat').isFloat(),
+       body('fromLng').isFloat(),
+       body('to').trim().notEmpty(),
+       body('departureTime').matches(/^([01]\d|2[0-3]):[0-5]\d$/),
+       body('distanceKm').isInt({ min: 1, max: 1000 }),
+       body('estimatedDurationMinutes').isInt({ min: 1, max: 600 }),
+       body('cost').isFloat({ gt: 0 }),
+       body('availableSeats').notEmpty(),
+       body('carModel').trim().notEmpty(),
+       body('carColor').trim().notEmpty(),
+       body('carLicensePlate').trim().notEmpty(),
+       body('driverPreference').optional().isIn(['Any', 'Males Only', 'Females Only']),
+       body('passengerBagLimit').optional().isInt({ min: 0, max: 5 }),
+     ],
+     async (req, res) => {
+       const errors = validationResult(req);
+       if (!errors.isEmpty()) {
+         return res.status(400).json({ errors: errors.array() });
+       }
+   
+       try {
+         const trip = await Trip.create({
+           driver: req.user._id,
+           ...req.body,
+         });
+         res.status(201).json({ success: true, data: trip });
+       } catch (err) {
+         console.error(err);
+         res.status(500).json({ success: false, error: err.message });
+       }
+     }
+   );
+   
+   module.exports = router;
 /* ───────────────────────────────────────────────
    2) PUBLIC LIST  – GET /api/trips
    ─────────────────────────────────────────────── */
