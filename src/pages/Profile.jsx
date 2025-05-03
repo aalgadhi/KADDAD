@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import NavBar from '../components/NavBar';
+import NavBar from '../Components/NavBar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 // import '@fortawesome/fontawesome-free/css/all.min.css';
 

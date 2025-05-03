@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import NavBar from '../components/NavBar';
+import NavBar from '../Components/NavBar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -118,58 +118,60 @@ export default function TripForm() {
   };
 
   /* ───── Submit handler ───── */
-  const handleCreateTrip = async (e) => {
-    e.preventDefault();
+// in TripForm.jsx
+const handleCreateTrip = async (e) => {
+  e.preventDefault();
 
-    // validate pickup location first
-    if (!departure) {
-      setLocError(true);
+  if (!departure) {
+    setLocError(true);
+    return;
+  }
+
+  const newTrip = {
+    from: departure,
+    fromLat: departureLat,
+    fromLng: departureLng,
+    to: destination,
+    departureTime,
+    distanceKm: toNumber(distance),
+    estimatedDurationMinutes: toNumber(duration),
+    cost: toNumber(cost),
+    availableSeats: seats,            // string is fine per your schema
+    carModel: model.trim(),
+    carColor: color.trim(),
+    carLicensePlate: license.trim(),
+    driverPreference: preference,
+    passengerBagLimit: toNumber(bagLimit),
+  };
+
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in again – token missing.');
       return;
     }
 
-    const newTrip = {
-      from: departure,
-      to: destination,
-      departureTime,
-      distanceKm: toNumber(distance),
-      estimatedDurationMinutes: toNumber(duration),
-      cost: toNumber(cost),
-      availableSeats: toNumber(seats),
-      carModel: model,
-      carColor: color,
-      carLicensePlate: license,
-      driverPreference: preference,
-      passengerBagLimit: toNumber(bagLimit),
-    };
+    const res = await fetch('http://localhost:8000/api/trips', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(newTrip),
+    });
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Please log in again – token missing.');
-        return;
-      }
-
-      const res = await fetch('http://localhost:8000/api/trips', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newTrip),
-      });
-
-      if (res.ok) {
-        navigate('/home');
-      } else {
-        const err = await res.json();
-        console.error('Validation errors:', err);
-        alert('Unable to create trip – please check your inputs.');
-      }
-    } catch (err) {
-      console.error('Error saving trip:', err);
-      alert('Network error – please try again later.');
+    if (res.ok) {
+      navigate('/home');
+    } else {
+      const err = await res.json();
+      console.error('Validation errors:', err);
+      alert('Unable to create trip – please check your inputs.');
     }
-  };
+  } catch (err) {
+    console.error('Error saving trip:', err);
+    alert('Network error – please try again later.');
+  }
+};
 
   /*****************************
    * Render
