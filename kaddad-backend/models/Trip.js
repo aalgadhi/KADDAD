@@ -25,6 +25,10 @@ const tripSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  date: {
+    type: Date,
+    required: true,
+  },
   departureTime: {
     type: String, // "HH:MM"
     required: true,
@@ -42,7 +46,7 @@ const tripSchema = new mongoose.Schema({
     required: true,
   },
   availableSeats: {
-    type: String,
+    type: Number,
     required: true,
   },
   carModel: {
@@ -58,20 +62,20 @@ const tripSchema = new mongoose.Schema({
     required: true,
   },
   driverPreference: {
-    type: String, // "Any", "Males Only", "Females Only"
+    type: String,
     default: 'Any',
   },
   passengerBagLimit: {
     type: Number,
     default: 0,
   },
-  carImage: {          // Add this field
-        type: Buffer,    // Store the image as a Buffer (binary data)
-        required: false  // Adjust as needed
+  carImage: {
+    type: Buffer,
+    required: false
   },
-  carImageType: {     // Optionally store the MIME type
-        type: String,
-        required: false
+  carImageType: {
+    type: String,
+    required: false
   },
   passengers: [
     {
