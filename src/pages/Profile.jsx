@@ -56,13 +56,15 @@ function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
+      console.log('Token in profile fetch:', token);
       if (!token) return;
 
       try {
         const response = await fetch('http://localhost:8000/api/users/profile', {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
 
@@ -92,10 +94,12 @@ function Profile() {
       if (!token) return;
 
       try {
-        const res = await fetch('http://localhost:5000/my-trips', {
+        const res = await fetch('http://localhost:8000/api/trips/my-trips', {
+          method: 'GET',
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
         });
         const data = await res.json();
         if (res.ok) {
@@ -265,7 +269,7 @@ function Profile() {
     const reason = prompt(isArabic ? 'سبب الإلغاء (اختياري):' : 'Cancel reason (optional):');
 
     try {
-      const response = await fetch(`http://localhost:5000/${tripId}/cancel`, {
+      const response = await fetch(`http://localhost:8000/${tripId}/cancel`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -292,7 +296,7 @@ function Profile() {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/${tripId}/complete`, {
+      const response = await fetch(`http://localhost:8000/${tripId}/complete`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -326,11 +330,16 @@ function Profile() {
               <div className="card-body text-center">
                 <div className="mb-3 position-relative">
                   <img
-                    src={profilePic || `https://via.placeholder.com/150?text=${firstName?.[0] || '?'}`}
+                    src={profilePic && profilePic.startsWith('http')
+                      ? profilePic
+                      : `https://via.placeholder.com/150?text=${encodeURIComponent(firstName?.[0] || '?')}`}
                     className="rounded-circle img-thumbnail"
                     alt={isArabic ? 'الصورة الشخصية' : 'Profile'}
                     style={{ width: '150px', height: '150px', objectFit: 'cover' }}
-                    onError={(e) => { e.target.onerror = null; e.target.src = `https://via.placeholder.com/150?text=${firstName?.[0] || '?'}` }}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = `https://via.placeholder.com/150?text=${encodeURIComponent(firstName?.[0] || '?')}`;
+                    }}
                   />
                   {isEditMode && (
                     <label htmlFor="profilePicInput" className="position-absolute bottom-0 end-0 btn btn-sm btn-light rounded-circle" style={{ transform: 'translate(25%, 25%)', cursor: 'pointer' }}>
