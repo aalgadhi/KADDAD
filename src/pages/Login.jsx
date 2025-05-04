@@ -93,7 +93,7 @@ function Login() {
             <div className="card shadow-lg border-0 rounded-lg">
               <div className="card-body p-5">
                 <div className="text-center mb-4">
-                  <h1 className="fs-4 fw-bold">{lang === 'ar' ? 'تسجيل الدخول' : 'Login'}</h1>
+                  <h1 className="fs-4 fw-bold">{lang === 'ar' ? 'تسجيل الدخول | كداد' : 'Login | KADDAD'}</h1>
                 </div>
                 {error && <div className="alert alert-danger">{error}</div>}
                 <form onSubmit={handleLogin}>

@@ -13,8 +13,6 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 const getInitialLang = () =>
   localStorage.getItem('lang') || (navigator.language.startsWith('ar') ? 'ar' : 'en');
 
-const defaultLatLng = [24.7136, 46.6753];
-
 export default function MapView() {
   const { tripId }  = useParams();
   const navigate = useNavigate();
@@ -33,19 +31,24 @@ export default function MapView() {
   const pickupMarkerRef = useRef(null);
 
   const userId = JSON.parse(localStorage.getItem('profileData') || '{}')?._id;
+  const token = localStorage.getItem('token');
 
   const fetchTripById = async (id) => {
     setLoading(true);
     setError(null);
-    // DO NOT setTrip(null) here when refreshing
-    setPickupName(null); // Reset dependent state
+    setPickupName(null);
     if (imageURL && imageURL.startsWith('blob:')) {
         URL.revokeObjectURL(imageURL);
     }
-    setImageURL(null); // Reset dependent state
+    setImageURL(null);
 
     try {
-      const res = await fetch(`http://localhost:8000/api/trips/${id}`);
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`http://localhost:8000/api/trips/${id}`, { headers });
       if (!res.ok) {
          if (res.status === 404) throw new Error('not-found');
          throw new Error(`HTTP error! status: ${res.status}`);
@@ -54,12 +57,10 @@ export default function MapView() {
        if (!json.data) throw new Error('no-data');
 
        const fetchedTrip = json.data;
-       setTrip(fetchedTrip); // Update with new data
+       setTrip(fetchedTrip);
 
-        // Handle Image based on new data
         if (fetchedTrip.carImage && fetchedTrip.carImage.data && fetchedTrip.carImageType) {
             try {
-                // Ensure previous blob is revoked before creating new one if URL existed
                 if (imageURL && imageURL.startsWith('blob:')) {
                     URL.revokeObjectURL(imageURL);
                 }
@@ -71,10 +72,12 @@ export default function MapView() {
                  setImageURL(null);
             }
         } else {
+             if (imageURL && imageURL.startsWith('blob:')) {
+                URL.revokeObjectURL(imageURL);
+            }
             setImageURL(null);
         }
 
-       // Handle Pickup Name based on new data
        if (fetchedTrip.fromLat != null && fetchedTrip.fromLng != null) {
          try {
            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${fetchedTrip.fromLat}&lon=${fetchedTrip.fromLng}&accept-language=${lang}`);
@@ -91,42 +94,35 @@ export default function MapView() {
     } catch (err) {
       console.error("Fetch trip error:", err);
       setError(err.message === 'not-found' ? (isArabic ? 'الرحلة غير موجودة أو تم حذفها.' : 'Trip not found or has been deleted.') : (isArabic ? 'فشل تحميل بيانات الرحلة.' : 'Failed to load trip data.'));
-      // Keep existing trip data on error during refresh? Or setTrip(null)?
-      // Setting null might hide the map, keeping existing might be better UX.
     } finally {
       setLoading(false);
     }
   };
 
-  // Initial fetch and language change fetch
   useEffect(() => {
     if (tripId) {
         fetchTripById(tripId);
     }
-     // Cleanup for imageURL specifically when tripId/lang changes OR component unmounts
      return () => {
         if (imageURL && imageURL.startsWith('blob:')) {
-            URL.revokeObjectURL(imageURL);
+            const currentImageURL = imageURL;
+            setTimeout(() => URL.revokeObjectURL(currentImageURL), 0);
         }
      };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripId, lang]);
+  }, [tripId, lang, token]);
 
-  // Update HTML lang/dir
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir  = isArabic ? 'rtl' : 'ltr';
     try { localStorage.setItem('lang', lang); } catch (e) { console.error("Failed to set lang in localStorage", e) }
   }, [lang, isArabic]);
 
-  // Map initialization and update effect
   useEffect(() => {
-    // Guard condition: Don't run if trip data isn't ready or map div doesn't exist
     if (!trip || typeof trip.fromLat !== 'number' || typeof trip.fromLng !== 'number' || !document.getElementById('map')) {
         return;
     }
 
-    // Leaflet icon setup
     delete L.Icon.Default.prototype._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: markerIcon2x,
@@ -137,55 +133,53 @@ export default function MapView() {
     const lat = trip.fromLat;
     const lng = trip.fromLng;
 
-    let map = mapRef.current; // Get existing map instance, if any
+    let map = mapRef.current;
 
-    // Initialize map only if it doesn't exist
     if (!map) {
         try {
           map = L.map('map').setView([lat, lng], 13);
-          mapRef.current = map; // Store the instance
+          mapRef.current = map;
 
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 18,
           }).addTo(map);
 
-          // Invalidate size after initial tile layer loads
           map.whenReady(() => {
-              map.invalidateSize();
+              setTimeout(() => map.invalidateSize(), 0);
           });
 
 
         } catch (mapError) {
           console.error("Failed to initialize map:", mapError);
           setError(isArabic ? "فشل في عرض الخريطة" : "Failed to display map");
-          if (mapRef.current) { // Cleanup if partial init failed
+          if (mapRef.current) {
               mapRef.current.remove();
               mapRef.current = null;
           }
-          return; // Stop if map init failed
+          return;
         }
     } else {
-      // If map exists, just update its view and invalidate size
       map.setView([lat, lng], 13);
-      map.invalidateSize(); // Ensure map redraws correctly
+      setTimeout(() => map.invalidateSize(), 0);
     }
 
-    // Add/Update marker (remove previous first)
     if (pickupMarkerRef.current && map.hasLayer(pickupMarkerRef.current)) {
         map.removeLayer(pickupMarkerRef.current);
     }
-    pickupMarkerRef.current = null; // Clear ref before creating new one
+    pickupMarkerRef.current = null;
 
     const popupContent = `<b>${isArabic ? 'نقطة الانطلاق' : 'Pickup Location'}</b><br>${pickupLocationName || (isArabic ? 'غير محدد' : 'N/A')}`;
-    pickupMarkerRef.current = L.marker([lat, lng])
-        .addTo(map)
-        .bindPopup(popupContent);
+    try {
+        pickupMarkerRef.current = L.marker([lat, lng])
+            .addTo(map)
+            .bindPopup(popupContent);
+    } catch (markerError) {
+        console.error("Failed to add marker:", markerError);
+    }
 
-  // Dependencies for map updates
-  }, [trip, isArabic, lang, pickupLocationName]); // Dependencies seem correct now
+  }, [trip, isArabic, lang, pickupLocationName]);
 
-  // Cleanup effect for map instance on component unmount
   useEffect(() => {
       return () => {
           if (mapRef.current) {
@@ -197,21 +191,26 @@ export default function MapView() {
               mapRef.current = null;
               pickupMarkerRef.current = null;
           }
+          if (imageURL && imageURL.startsWith('blob:')) {
+            const currentImageURL = imageURL;
+            setTimeout(() => URL.revokeObjectURL(currentImageURL), 0);
+          }
       };
-  }, []); // Empty array ensures this runs only on unmount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Booking handler
   const handleBookTrip = async () => {
     setIsBooking(true);
-    const token = localStorage.getItem('token');
     if (!token) {
       alert(isArabic ? 'يرجى تسجيل الدخول أولاً لحجز الرحلة.' : 'Please log in first to book the ride.');
       setIsBooking(false);
+      navigate('/login');
       return;
     }
      if (!userId) {
         alert(isArabic ? 'لم يتم العثور على معرف المستخدم. يرجى تسجيل الدخول مرة أخرى.' : 'User ID not found. Please log in again.');
         setIsBooking(false);
+        navigate('/login');
         return;
     }
 
@@ -226,7 +225,8 @@ export default function MapView() {
 
       const json = await res.json();
       if (res.ok && json.success) {
-        await fetchTripById(tripId); // Refresh data
+        alert(isArabic ? 'تم حجز الرحلة بنجاح!' : 'Trip booked successfully!');
+        await fetchTripById(tripId);
       } else {
          let errorMsg = json.message || json.error || (isArabic ? 'فشل الحجز.' : 'Booking failed.');
          if (res.status === 400 && errorMsg.includes('already booked')) {
@@ -248,18 +248,18 @@ export default function MapView() {
     }
   };
 
-   // Cancellation handler
    const handleCancelBooking = async () => {
        setIsCancelling(true);
-       const token = localStorage.getItem('token');
        if (!token) {
            alert(isArabic ? 'الرجاء تسجيل الدخول لإلغاء الحجز.' : 'Please log in to cancel booking.');
            setIsCancelling(false);
+           navigate('/login');
            return;
        }
        if (!userId) {
             alert(isArabic ? 'لم يتم العثور على معرف المستخدم. يرجى تسجيل الدخول مرة أخرى.' : 'User ID not found. Please log in again.');
            setIsCancelling(false);
+           navigate('/login');
            return;
        }
 
@@ -279,7 +279,8 @@ export default function MapView() {
 
            const result = await res.json();
            if (res.ok && result.success) {
-               await fetchTripById(tripId); // Refresh data
+               alert(isArabic ? 'تم إلغاء الحجز بنجاح.' : 'Booking cancelled successfully.');
+               await fetchTripById(tripId);
            } else {
                alert(result.message || (isArabic ? 'فشل إلغاء الحجز.' : 'Failed to cancel booking.'));
            }
@@ -291,34 +292,33 @@ export default function MapView() {
        }
    };
 
-    // --- Render Logic ---
 
-    // Loading state
-    if (loading && !trip) { // Show full page loader only if trip is not yet loaded at all
+    if (loading && !trip) {
         return (
-           <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
-              <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
-                  <span className="visually-hidden">{isArabic ? 'جارٍ التحميل...' : 'Loading...'}</span>
+           <>
+              <NavBar lang={lang} setLang={setLang} />
+              <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+                  <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+                      <span className="visually-hidden">{isArabic ? 'جارٍ التحميل...' : 'Loading...'}</span>
+                  </div>
               </div>
-           </div>
+           </>
         );
     }
 
-    // Error or no trip data state (after initial load attempt)
-    if (error || (!loading && !trip)) { // Check !loading ensure fetch attempt finished
+    if (error || (!loading && !trip)) {
         return (
-            <div className="d-flex flex-column justify-content-center align-items-center text-center" style={{ minHeight: '80vh' }}>
+            <div className={`d-flex flex-column ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'} style={{ minHeight: '100vh' }}>
                <NavBar lang={lang} setLang={setLang} />
-               <div className="container py-5">
+               <div className="container flex-grow-1 d-flex flex-column justify-content-center align-items-center text-center py-5">
                    <i className="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                   <h2>{error === 'not-found' ? (isArabic ? 'الرحلة غير موجودة' : 'Trip Not Found') : (error || (isArabic ? 'خطأ' : 'Error'))}</h2>
+                   <h2>{error === 'not-found' ? (isArabic ? 'الرحلة غير موجودة' : 'Trip Not Found') : (error && error.includes('load trip data') ? (isArabic ? 'خطأ في تحميل البيانات' : 'Data Loading Error') : (isArabic ? 'خطأ' : 'Error'))}</h2>
                    <p className="text-muted">
-                        {error === 'not-found'
-                         ? (isArabic ? 'قد تكون الرحلة قد اكتملت أو تم إلغاؤها أو الرابط غير صحيح.' : 'The trip might have been completed, cancelled, or the link is incorrect.')
-                         : (error?.includes('الخريطة') // Check if it's the specific map error
-                            ? error
-                            : (isArabic ? 'حدث خطأ أثناء تحميل تفاصيل الرحلة.' : 'An error occurred while loading trip details.')
-                           )
+                       {error === 'not-found'
+                           ? (isArabic ? 'قد تكون الرحلة قد اكتملت أو تم إلغاؤها أو الرابط غير صحيح.' : 'The trip might have been completed, cancelled, or the link is incorrect.')
+                           : error?.includes('الخريطة')
+                               ? error
+                               : (isArabic ? 'حدث خطأ أثناء تحميل تفاصيل الرحلة. يرجى المحاولة مرة أخرى.' : 'An error occurred while loading trip details. Please try again.')
                        }
                    </p>
                    <Link to="/home" className="btn btn-primary mt-3">
@@ -329,7 +329,6 @@ export default function MapView() {
           );
     }
 
-    // Calculate derived state (assuming trip is available now)
     const driverName = trip.driver
         ? `${trip.driver.firstName || ''} ${trip.driver.lastName || ''}`.trim() || (isArabic ? 'السائق غير محدد' : 'Unknown Driver')
         : isArabic ? 'السائق غير محدد' : 'Unknown Driver';
@@ -340,21 +339,19 @@ export default function MapView() {
 
     const isDriver = userId && trip.driver?._id === userId;
     const isPassenger = userId && trip.passengers?.some(p => p.user === userId || p.user?._id === userId);
-    const canBook = !isDriver && !isPassenger && trip.status === 'active' && (trip.availableSeats ?? 0) > 0;
+    const isTripInPast = new Date(trip.date + 'T' + (trip.departureTime || '23:59:59')) < new Date();
+    const canBook = !isDriver && !isPassenger && trip.status === 'active' && (trip.availableSeats ?? 0) > 0 && !isTripInPast;
 
-    // Main component render (Show existing trip data even while loading=true for refresh)
+
     return (
-        <div className={`bg-light ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'}>
+        <div className={`bg-light ${isArabic ? 'rtl' : 'ltr'}`} dir={isArabic ? 'rtl' : 'ltr'} style={{ minHeight: '100vh' }}>
           <NavBar lang={lang} setLang={setLang} />
 
-          {/* Optional: Add a subtle loading indicator during refresh */}
-          {loading && <div className="position-absolute top-0 start-0 p-2 opacity-50"><span className="spinner-border spinner-border-sm text-primary"></span></div>}
-
+          {loading && <div className="position-fixed top-0 start-50 translate-middle-x mt-2 p-2 opacity-75 z-index-toast"><span className="spinner-border spinner-border-sm text-primary"></span> <span className='ms-1'>{isArabic ? 'تحديث...' : 'Refreshing...'}</span></div>}
 
           <div className="container py-4">
             <div className="row g-4">
 
-              {/* Map Column */}
               <div className="col-lg-7">
                 <div className="card shadow-sm h-100">
                    <div className="card-header bg-white d-flex justify-content-between align-items-center">
@@ -364,30 +361,29 @@ export default function MapView() {
                      </span>
                    </div>
                   <div className="card-body p-0">
-                    {/* Map container div */}
                     <div id="map" style={{ height: '550px', width: '100%' }}>
-                        {/* Display map-specific error, if any */}
-                        {error && error.includes('الخريطة') && <div className='p-3 text-danger'>{error}</div>}
+                        {error && error.includes('الخريطة') &&
+                            <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-light bg-opacity-75">
+                                <p className="text-danger fw-bold">{error}</p>
+                            </div>
+                         }
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Details Column */}
               <div className="col-lg-5">
                 <div className="card shadow-sm h-100">
                   <div className="card-body d-flex flex-column">
-                    {/* Image */}
                     <div className="text-center mb-3">
                       <img
-                        src={imageURL || 'https://via.placeholder.com/400x250.png?text=No+Car+Image'}
+                        src={imageURL || 'https://via.placeholder.com/400x250.png?text=' + (isArabic ? 'لا+يوجد+صورة' : 'No+Car+Image')}
                         className="img-fluid rounded border"
-                        alt={trip.carModel || (isArabic ? 'سيارة غير محددة' : 'Unnamed Car')}
+                        alt={trip.carModel || (isArabic ? 'سيارة الرحلة' : 'Trip Car')}
                         style={{ width: '100%', height: '200px', objectFit: 'cover' }}
-                        onError={(e) => { e.target.onerror = null; e.target.src='https://via.placeholder.com/400x250.png?text=Image+Error'; }}
+                        onError={(e) => { e.target.onerror = null; e.target.src='https://via.placeholder.com/400x250.png?text=' + (isArabic ? 'خطأ+في+الصورة' : 'Image+Error'); }}
                       />
                     </div>
-                    {/* Car/Driver Info */}
                     <div className={`d-flex justify-content-between align-items-center mb-1 ${isArabic ? 'flex-row-reverse text-end' : ''}`}>
                        <h4 className="card-title mb-0">{trip.carModel || (isArabic ? 'سيارة غير محددة' : 'Unnamed Car')}</h4>
                        {trip.driver?.averageRating != null && trip.driver.averageRating > 0 && (
@@ -399,10 +395,20 @@ export default function MapView() {
                      <p className={`text-muted mb-3 small ${isArabic ? 'text-end' : ''}`}>
                         {isArabic ? 'بواسطة' : 'By'} {driverName} ({trip.carColor || (isArabic ? 'لون غير محدد' : 'N/A Color')}) - {trip.carLicensePlate || (isArabic ? 'لوحة غير محددة' : 'N/A Plate')}
                      </p>
+
+                     {isPassenger && trip?.driver?.phone && (
+                         <div className={`alert alert-info p-2 mb-3 ${isArabic ? 'text-end' : ''}`} role="alert">
+                            <i className={`fas fa-phone-alt ${isArabic ? 'ms-2' : 'me-2'}`}></i>
+                            <strong>{isArabic ? 'هاتف السائق للتواصل:' : 'Driver Contact:'}</strong>
+                            <a href={`tel:${trip.driver.phone}`} className={`ms-2 fw-bold user-select-all ${isArabic ? 'float-start' : 'float-end'}`} dir="ltr">
+                               {trip.driver.phone}
+                            </a>
+                         </div>
+                     )}
+
                      <hr className="my-2"/>
-                    {/* Trip Details */}
                     <div className="mb-3 small text-muted flex-grow-1">
-                       <p className="mb-2 d-flex align-items-center">
+                        <p className="mb-2 d-flex align-items-center">
                          <i className={`fas fa-calendar-alt fa-fw ${isArabic ? 'ms-2' : 'me-2'}`} style={{color: '#6f42c1'}}></i>
                          <span className="flex-grow-1"><strong>{isArabic ? `التاريخ:` : `Date:`}</strong> {formattedDate}</span>
                        </p>
@@ -443,7 +449,6 @@ export default function MapView() {
                         <span className="flex-grow-1"><strong>{isArabic ? `السعر الإجمالي:` : `Total Cost:`}</strong> {typeof trip.cost === 'number' ? `${trip.cost.toFixed(2)} ${isArabic ? 'ر.س' : 'SAR'}` : (isArabic ? 'غير محدد' : 'N/A')}</span>
                       </p>
                     </div>
-                    {/* Action Buttons */}
                     <div className="d-grid gap-2 mt-auto pt-3 border-top">
                       {isDriver ? (
                            <button className="btn btn-secondary btn-lg" disabled>
@@ -454,11 +459,11 @@ export default function MapView() {
                             <button className="btn btn-success btn-lg" disabled>
                                 <i className={`fas fa-check ${isArabic ? 'ms-1' : 'me-1'}`}></i>{isArabic ? 'تم حجز هذه الرحلة' : 'You Booked This Ride'}
                             </button>
-                            {trip.status === 'active' && (
+                            {(trip.status === 'active' && !isTripInPast) && (
                                 <button
                                     className="btn btn-danger btn-lg"
                                     onClick={handleCancelBooking}
-                                    disabled={isCancelling || loading} // Also disable if currently refreshing
+                                    disabled={isCancelling || loading}
                                 >
                                   {isCancelling ? (
                                       <> <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> {isArabic ? 'جاري الإلغاء...' : 'Cancelling Booking...'} </>
@@ -472,7 +477,7 @@ export default function MapView() {
                         <button
                           className="btn btn-primary btn-lg"
                           onClick={handleBookTrip}
-                          disabled={isBooking || loading} // Also disable if currently refreshing
+                          disabled={isBooking || loading}
                         >
                           {isBooking ? (
                             <> <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> {isArabic ? 'جاري الحجز...' : 'Processing Booking...'} </>
@@ -484,6 +489,7 @@ export default function MapView() {
                          <button className="btn btn-secondary btn-lg" disabled>
                            <i className={`fas fa-times-circle ${isArabic ? 'ms-1' : 'me-1'}`}></i>
                            { (trip.availableSeats ?? 0) <= 0 && trip.status === 'active' ? (isArabic ? 'الرحلة ممتلئة' : 'Trip is Full')
+                             : isTripInPast ? (isArabic ? 'الرحلة في الماضي' : 'Trip is in the past')
                              : trip.status !== 'active' ? (isArabic ? `الحجز غير متاح (${trip.status === 'completed' ? 'مكتملة' : trip.status === 'cancelled' ? 'ملغاة' : trip.status})` : `Booking Not Active (${trip.status})`)
                              : (isArabic ? 'الحجز غير متاح' : 'Booking Unavailable')}
                          </button>

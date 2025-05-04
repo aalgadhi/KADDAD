@@ -383,7 +383,7 @@ router.get(
 
     try {
       const trip = await Trip.findById(req.params.id)
-        .populate('driver', 'firstName lastName averageRating profileImage profileImageType')
+        .populate('driver', 'firstName lastName averageRating profileImage profileImageType phone')
         .populate('passengers.user', 'firstName lastName');
 
       if (!trip) return res.status(404).json({ success: false, error: 'Trip not found', message: 'Trip not found' });
