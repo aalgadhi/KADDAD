@@ -60,7 +60,7 @@ function Profile() {
       if (!token) return;
 
       try {
-        const response = await fetch('http://localhost:8000/api/users/profile', {
+        const response = await fetch('https://kaddad-backend.onrender.com/api/users/profile', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -94,7 +94,7 @@ function Profile() {
       if (!token) return;
 
       try {
-        const res = await fetch('http://localhost:8000/api/trips/my-trips', {
+        const res = await fetch('https://kaddad-backend.onrender.com/api/trips/my-trips', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -136,7 +136,7 @@ function Profile() {
     if (!token) return;
 
     try {
-      const response = await fetch('http://localhost:8000/api/users/profile', {
+      const response = await fetch('https://kaddad-backend.onrender.com/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -269,7 +269,7 @@ function Profile() {
     const reason = prompt(isArabic ? 'سبب الإلغاء (اختياري):' : 'Cancel reason (optional):');
 
     try {
-      const response = await fetch(`http://localhost:8000/${tripId}/cancel`, {
+      const response = await fetch(`https://kaddad-backend.onrender.com/${tripId}/cancel`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -296,7 +296,7 @@ function Profile() {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/${tripId}/complete`, {
+      const response = await fetch(`https://kaddad-backend.onrender.com/${tripId}/complete`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

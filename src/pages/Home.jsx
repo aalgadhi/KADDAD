@@ -112,7 +112,7 @@ export default function Home() {
     setLoad(true);
 
     try {
-      const res = await fetch(`http://localhost:8000/api/trips/${tripId}/complete`, {
+      const res = await fetch(`https://kaddad-backend.onrender.com/api/trips/${tripId}/complete`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -156,7 +156,7 @@ export default function Home() {
        setLoadBooked(true);
 
        try {
-           const res = await fetch(`http://localhost:8000/api/trips/${tripId}/cancel-booking`, {
+           const res = await fetch(`https://kaddad-backend.onrender.com/api/trips/${tripId}/cancel-booking`, {
                method: 'PATCH',
                headers: {
                    'Authorization': `Bearer ${token}`,
@@ -192,7 +192,7 @@ export default function Home() {
     (async () => {
       setLoad(true);
       try {
-        const res = await fetch('http://localhost:8000/api/trips?status=active');
+        const res = await fetch('https://kaddad-backend.onrender.com/api/trips?status=active');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const json = await res.json();
         setAll(json.data || []);
@@ -227,7 +227,7 @@ export default function Home() {
     const token = localStorage.getItem('token');
     if (!token) return [];
     try {
-        const res = await fetch('http://localhost:8000/api/trips/my-bookings', {
+        const res = await fetch('https://kaddad-backend.onrender.com/api/trips/my-bookings', {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);

@@ -48,7 +48,7 @@ export default function MapView() {
           headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const res = await fetch(`http://localhost:8000/api/trips/${id}`, { headers });
+      const res = await fetch(`https://kaddad-backend.onrender.com/api/trips/${id}`, { headers });
       if (!res.ok) {
          if (res.status === 404) throw new Error('not-found');
          throw new Error(`HTTP error! status: ${res.status}`);
@@ -215,7 +215,7 @@ export default function MapView() {
     }
 
     try {
-      const res = await fetch(`http://localhost:8000/api/trips/${tripId}/book`, {
+      const res = await fetch(`https://kaddad-backend.onrender.com/api/trips/${tripId}/book`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -269,7 +269,7 @@ export default function MapView() {
        }
 
        try {
-           const res = await fetch(`http://localhost:8000/api/trips/${tripId}/cancel-booking`, {
+           const res = await fetch(`https://kaddad-backend.onrender.com/api/trips/${tripId}/cancel-booking`, {
                method: 'PATCH',
                headers: {
                    'Authorization': `Bearer ${token}`,

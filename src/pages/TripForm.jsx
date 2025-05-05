@@ -180,7 +180,7 @@ export default function TripForm() {
         return;
       }
 
-      const res = await fetch('http://localhost:8000/api/trips', {
+      const res = await fetch('https://kaddad-backend.onrender.com/api/trips', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,

@@ -47,7 +47,7 @@ function SignUp() {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/users/register', {
+      const response = await fetch('https://kaddad-backend.onrender.com/api/users/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

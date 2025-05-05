@@ -30,7 +30,7 @@ export default function Review() {
             try {
                 const token = localStorage.getItem('token'); // Need token to potentially check passenger status later if API requires
                 const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-                const res = await fetch(`http://localhost:8000/api/trips/${tripId}`, { headers });
+                const res = await fetch(`https://kaddad-backend.onrender.com/api/trips/${tripId}`, { headers });
 
                 if (!res.ok) {
                     const errorData = await res.json().catch(() => ({ message: `HTTP error! status: ${res.status}` }));
@@ -90,7 +90,7 @@ export default function Review() {
 
         try {
             const driverId = trip.driver._id;
-            const res = await fetch(`http://localhost:8000/api/users/${driverId}/submit-review`, {
+            const res = await fetch(`https://kaddad-backend.onrender.com/api/users/${driverId}/submit-review`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

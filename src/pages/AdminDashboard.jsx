@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import useAuth from './useAuth';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://kaddad-backend.onrender.com';
 
 function AdminDashboard() {
   const [users, setUsers] = useState([]);
