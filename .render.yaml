@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: kaddad
+    name: kaddad-backend
     env: node
-    buildCommand: npm install && npm run build  
-    startCommand: npm run start
+    buildCommand: npm install  
+    startCommand: npm run start 
