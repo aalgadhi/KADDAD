@@ -2,8 +2,12 @@
   "name": "kaddad-backend",
   "version": "1.0.0",
   "main": "server.js",
- "scripts": {
-  "start": "node server.js"  
+"scripts": {
+  "start": "bun run react-scripts start", 
+  "build": "bun run react-scripts build", 
+  "test": "bun run react-scripts test", 
+  "eject": "bun run react-scripts eject",
+  "postinstall": "bun install"
 },
   "keywords": [],
   "author": "",
