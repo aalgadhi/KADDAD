@@ -2,5 +2,6 @@ services:
   - type: web
     name: kaddad
     env: node
+    nodeVersion: "16"  
     buildCommand: npm install && npm run build
     startCommand: npm run start
