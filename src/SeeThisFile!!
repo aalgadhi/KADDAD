@@ -9,3 +9,5 @@
 // حمل npm install @fortawesome/fontawesome-free
 // حمل npm install react-router-dom
 //حمل اذا ماضبط الهكمبوننتس npm install --save-dev babel-loader webpack-dev-server
+// npm install jsonwebtoken
+// npm i express-validator
