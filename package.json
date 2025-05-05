@@ -24,11 +24,11 @@
     "web-vitals": "^2.1.4"
   },
 "scripts": {
-  "start": "bun run react-scripts start",
-  "build": "bun run react-scripts build",
-  "test": "bun run react-scripts test",
-  "eject": "bun run react-scripts eject",
-  "postinstall": "bun install"  
+  "start": "react-scripts start", 
+  "build": "react-scripts build", 
+  "test": "react-scripts test", 
+  "eject": "react-scripts eject", 
+  "postinstall": "npm install"  
 },
   "eslintConfig": {
     "extends": [
