@@ -65,12 +65,12 @@ Drivers can use this form to post a new trip by providing vehicle, route, and co
 ## 🚀 Features
 
 ### 👥 User Roles
-<!--
+
 #### Admin
-- Manage driver approvals and user reports
-- Review ride listings, handle disputes, process refunds
-- Send notifications and view platform analytics
--->
+- Manage driver listings
+- Review ride listings
+- Delete and ban users
+  
 #### Student Driver
 - Register as a driver and upload documents for approval
 - Create, manage, and cancel ride listings
